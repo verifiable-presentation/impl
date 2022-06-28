@@ -1,0 +1,68 @@
+{
+	"name": "@vpgs/template-store",
+	"version": "0.0.0",
+	"description": "A service that stores templates for verifiable presentations designed by an issuer.",
+	"type": "module",
+	"scripts": {
+		"clean": "./scripts/clean",
+		"develop": "./scripts/develop",
+		"test": "./scripts/test",
+		"compile": "./scripts/compile",
+		"start": "node ./build/server.js",
+		"lint": "xo source/**/*.ts && prettier --check --ignore-path .gitignore .",
+		"format": "xo --fix source/**/*.ts && prettier --write .",
+		"prepare": "patch-package && pnpm clean"
+	},
+	"dependencies": {
+		"@milahu/patch-package": "6.4.14",
+		"fastify": "4.0.3",
+		"fastify-plugin": "3.0.1",
+		"got": "12.1.0",
+		"lowdb": "3.0.0",
+		"nanoid": "4.0.0",
+		"pino": "8.0.0",
+		"pino-pretty": "8.0.0",
+		"stacktrace-parser": "0.1.10"
+	},
+	"devDependencies": {
+		"chalk": "5.0.1",
+		"dotenv": "16.0.1",
+		"nodemon": "2.0.16",
+		"prettier": "2.7.1",
+		"tsup": "6.1.2",
+		"tsx": "3.6.0",
+		"typescript": "4.7.4",
+		"wait-on": "6.0.1",
+		"xo": "0.50.0",
+		"zx": "7.0.1"
+	},
+	"prettier": {
+		"semi": false,
+		"useTabs": true,
+		"singleQuote": true,
+		"bracketSpacing": true,
+		"trailingComma": "all",
+		"proseWrap": "always",
+		"endOfLine": "lf"
+	},
+	"xo": {
+		"prettier": true,
+		"rules": {
+			"capitalized-comments": 0,
+			"no-await-in-loop": 0,
+			"@typescript-eslint/restrict-template-expressions": 0,
+			"@typescript-eslint/no-unsafe-call": 0,
+			"@typescript-eslint/no-unsafe-return": 0,
+			"@typescript-eslint/no-unsafe-assignment": 0,
+			"@typescript-eslint/no-floating-promises": 0
+		}
+	},
+	"tsup": {
+		"target": "esnext",
+		"format": [
+			"esm"
+		],
+		"outDir": "./build/",
+		"minify": true
+	}
+}
