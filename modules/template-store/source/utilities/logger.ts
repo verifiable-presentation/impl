@@ -35,7 +35,7 @@ const options = {
 // @ts-expect-error False positive for error `operand for delete operation must be optional`.
 if (config.environment === 'production') delete options.transport
 // Log only errors in a test environment.
-if (config.environment === 'test') options.level = 'error'
+if (config.environment === 'testing') options.level = 'error'
 
 // Export the logger.
 // @ts-expect-error It's just typescript weirdness.

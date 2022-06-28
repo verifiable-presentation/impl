@@ -1,0 +1,10 @@
+{
+	"template": "Hello <%= data.name %>",
+	"renderer": "ejs",
+	"schema": {
+		"name": {
+			"type": "string",
+			"required": true
+		}
+	}
+}

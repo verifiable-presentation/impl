@@ -29,6 +29,7 @@
 		"stacktrace-parser": "0.1.10"
 	},
 	"devDependencies": {
+		"ava": "4.3.0",
 		"chalk": "5.0.1",
 		"dotenv": "16.0.1",
 		"nodemon": "2.0.16",
@@ -68,5 +69,14 @@
 		],
 		"outDir": "./build/",
 		"minify": true
+	},
+	"ava": {
+		"extensions": {
+			"ts": "module"
+		},
+		"nodeArguments": [
+			"--loader=tsx",
+			"--no-warnings"
+		]
 	}
 }

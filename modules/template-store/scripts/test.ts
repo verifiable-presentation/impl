@@ -1,7 +1,7 @@
 // scripts/test
 // Runs `tsc` to check types and `jest` for tests.
 
-import { stdout } from 'node:process'
+import { stdout, exit } from 'node:process'
 import 'zx/globals'
 
 import { config as loadConfig } from 'dotenv'
@@ -22,4 +22,16 @@ await $`tsc`
 stdout.write('\n')
 logger.success('found no type errors')
 
-logger.end()
+// Then run `ava`.
+logger.info('running tests')
+stdout.write('\n')
+
+try {
+	await $`ava tests/integration/api.ts`.pipe(stdout)
+
+	stdout.write('\n')
+	logger.success('successfully ran all tests')
+	logger.end()
+} catch (error) {
+	exit((error as any).exitCode)
+}

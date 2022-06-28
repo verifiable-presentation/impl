@@ -1,0 +1,10 @@
+{
+	"template": "Hello ${data.name}",
+	"renderer": "jstl",
+	"schema": {
+		"name": {
+			"type": "string",
+			"required": true
+		}
+	}
+}
