@@ -59,7 +59,7 @@ export const get = async (request: FastifyRequest, reply: FastifyReply) => {
 	const server = request.server as DecoratedFastifyInstance
 	const parameters = request.params as Record<string, string>
 
-	const templateId = parameters.templateId
+	const { templateId } = parameters
 
 	logger.silly('fetching template %s from database', templateId)
 

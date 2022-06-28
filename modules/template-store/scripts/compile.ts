@@ -1,8 +1,7 @@
-#!/usr/bin/env zx
-
 // scripts/compile
 // Runs `tsc` to check types and `jest` for compiles.
 
+import 'zx/globals'
 import { spinner } from 'zx/experimental'
 
 import { logger } from './utilities/logger.js'

@@ -4,14 +4,18 @@
 	"description": "A service that stores templates for verifiable presentations designed by an issuer.",
 	"type": "module",
 	"scripts": {
-		"clean": "./scripts/clean",
-		"develop": "./scripts/develop",
-		"test": "./scripts/test",
-		"compile": "./scripts/compile",
-		"start": "node ./build/server.js",
+		"clean": "tsx ./scripts/clean.ts",
+		"develop": "tsx ./scripts/develop.ts",
+		"test": "tsx ./scripts/test.ts",
+		"compile": "tsx ./scripts/compile.ts",
+		"start": "tsx ./scripts/start.ts",
 		"lint": "xo source/**/*.ts && prettier --check --ignore-path .gitignore .",
 		"format": "xo --fix source/**/*.ts && prettier --write .",
-		"prepare": "patch-package && pnpm clean"
+		"prepare": "patch-package && pnpm clean && pnpm compile"
+	},
+	"engines": {
+		"node": "18",
+		"pnpm": "7"
 	},
 	"dependencies": {
 		"@milahu/patch-package": "6.4.14",

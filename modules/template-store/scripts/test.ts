@@ -1,9 +1,8 @@
-#!/usr/bin/env zx
-
 // scripts/test
 // Runs `tsc` to check types and `jest` for tests.
 
 import { stdout } from 'node:process'
+import 'zx/globals'
 
 import { config as loadConfig } from 'dotenv'
 
