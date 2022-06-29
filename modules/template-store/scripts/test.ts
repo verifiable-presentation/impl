@@ -27,7 +27,7 @@ logger.info('running tests')
 stdout.write('\n')
 
 try {
-	await $`ava tests/integration/api.ts`.pipe(stdout)
+	await $`c8 ava tests/integration/api.ts`.pipe(stdout)
 
 	stdout.write('\n')
 	logger.success('successfully ran all tests')

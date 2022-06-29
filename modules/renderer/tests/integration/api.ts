@@ -23,6 +23,25 @@ test.before(async (t) => {
 	t.context.server = build({ disableRequestLogging: true })
 })
 
+test.serial('get /blah | 404 route-not-found', async (t) => {
+	const response = await t.context.server.inject({
+		method: 'get',
+		url: '/blah',
+	})
+
+	const { meta, error, data } = json.parse(response.payload)
+	const expectedError = new ServerError('route-not-found')
+
+	// Check that the request failed with the expected HTTP status code and
+	// error code.
+	t.is(meta?.status, expectedError.status)
+	t.is(error?.code, expectedError.code)
+	// Check that the message is related to the route not existing.
+	t.regex(error?.message, /route was not found/)
+	// Check that only the `error` and `meta` fields were returned.
+	t.is(data, undefined)
+})
+
 test.serial(
 	'post /render | 400 improper-payload [invalid renderer]',
 	async (t) => {
@@ -37,8 +56,8 @@ test.serial(
 		const { meta, error, data } = json.parse(response.payload)
 		const expectedError = new ServerError('improper-payload')
 
-		// Check that the request is successful and that it returns a blank array
-		// (since there are no templates in the database yet).
+		// Check that the request failed with the expected HTTP status code and
+		// error code.
 		t.is(meta?.status, expectedError.status)
 		t.is(error?.code, expectedError.code)
 		// Check that the message is related to the invalid value of the renderer
@@ -63,12 +82,12 @@ test.serial(
 		const { meta, error, data } = json.parse(response.payload)
 		const expectedError = new ServerError('precondition-failed')
 
-		// Check that the request is successful and that it returns a blank array
-		// (since there are no templates in the database yet).
+		// Check that the request failed with the expected HTTP status code and
+		// error code.
 		t.is(meta?.status, expectedError.status)
 		t.is(error?.code, expectedError.code)
 		// Check that the message is related to the invalid data passed.
-		t.regex(error?.message, /insufficient/)
+		t.regex(error?.message, /person/)
 		// Check that only the `error` and `meta` fields were returned.
 		t.is(data, undefined)
 	},

@@ -25,14 +25,16 @@ export const render = async (request: FastifyRequest, reply: FastifyReply) => {
 
 			// Get a comprehensible message.
 			const message = `The data provided was insufficient to render the presentation using the specified template: the 'data' field ${validationError.message}`
-			const enumValues = validationError?.params?.allowedValues as
+			const values = validationError?.params?.allowedValues as
 				| string[]
 				| undefined
-			const enumAddendum =
-				typeof enumValues === 'undefined' ? '' : `(${enumValues?.join(',')})`
+			/* c8 ignore start */
+			const addendum =
+				typeof values === 'undefined' ? '' : ` (${values?.join(', ')})`
+			/* c8 ignore end */
 
 			// Then throw an error.
-			throw new ServerError('precondition-failed', message + enumAddendum)
+			throw new ServerError('precondition-failed', message + addendum)
 		}
 
 		logger.silly('successfully validated data')

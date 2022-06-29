@@ -71,19 +71,18 @@ export const plugins = pluginify(async (server: FastifyInstance) => {
 				const validationError = (caughtError as FastifyError).validation?.at(0)
 				// If it is a validation error, parse the error and send it as a
 				// 400 improper-payload error.
-				logger.http('validation error occurred - %j', validationError)
+				logger.http(validationError, 'validation error occurred')
 
 				// Get a comprehensible message.
 				const message = `An error occurred while validating your request: ${caughtError.message}`
-				const enumValues = validationError?.params?.allowedValues as
+				const values = validationError?.params?.allowedValues as
 					| string[]
 					| undefined
-				const enumAddendum =
-					typeof enumValues === 'undefined' ? '' : `(${enumValues?.join(',')})`
-				const error = new ServerError(
-					'improper-payload',
-					message + enumAddendum,
-				)
+				/* c8 ignore start */
+				const addendum =
+					typeof values === 'undefined' ? '' : ` (${values?.join(', ')})`
+				/* c8 ignore end */
+				const error = new ServerError('improper-payload', message + addendum)
 
 				// Then send the error.
 				reply.code(error.status).send(error.send())

@@ -32,8 +32,10 @@ const options = {
 
 // Log colorfully when we are in a development environment, else use the
 // standard JSON logger.
+/* c8 ignore start */
 // @ts-expect-error False positive for error `operand for delete operation must be optional`.
 if (config.environment === 'production') delete options.transport
+/* c8 ignore end */
 // Log only errors in a test environment.
 if (config.environment === 'testing') options.level = 'error'
 

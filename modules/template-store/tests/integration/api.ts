@@ -32,6 +32,25 @@ test.after(async () => {
 	await database.write()
 })
 
+test.serial('get /blah | 404 route-not-found', async (t) => {
+	const response = await t.context.server.inject({
+		method: 'get',
+		url: '/blah',
+	})
+
+	const { meta, error, data } = json.parse(response.payload)
+	const expectedError = new ServerError('route-not-found')
+
+	// Check that the request failed with the expected HTTP status code and
+	// error code.
+	t.is(meta?.status, expectedError.status)
+	t.is(error?.code, expectedError.code)
+	// Check that the message is related to the route not existing.
+	t.regex(error?.message, /route was not found/)
+	// Check that only the `error` and `meta` fields were returned.
+	t.is(data, undefined)
+})
+
 test.serial(
 	'post /templates | 400 improper-payload [invalid renderer]',
 	async (t) => {
@@ -45,8 +64,8 @@ test.serial(
 		const { meta, error, data } = json.parse(response.payload)
 		const expectedError = new ServerError('improper-payload')
 
-		// Check that the request is successful and that it returns a blank array
-		// (since there are no templates in the database yet).
+		// Check that the request failed with the expected HTTP status code and
+		// error code.
 		t.is(meta?.status, expectedError.status)
 		t.is(error?.code, expectedError.code)
 		// Check that the message is related to the invalid value of the renderer
@@ -91,11 +110,30 @@ test.serial('get /templates | 200 okay', async (t) => {
 
 	const { meta, error, data } = json.parse(response.payload)
 
-	// Check that the request is successful and that it returns a blank array
-	// (since there are no templates in the database yet).
+	// Check that the request is successful and that it returns an array
+	// containing the one template created so far.
 	t.is(meta?.status, 200)
 	t.is(error, undefined)
 	t.deepEqual(data, t.context.templates)
+})
+
+test.serial('get /templates/{id} | 404 entity-not-found', async (t) => {
+	const response = await t.context.server.inject({
+		method: 'get',
+		url: '/templates/dhh',
+	})
+
+	const { meta, error, data } = json.parse(response.payload)
+	const expectedError = new ServerError('entity-not-found')
+
+	// Check that the request failed with the expected HTTP status code and
+	// error code.
+	t.is(meta?.status, expectedError.status)
+	t.is(error?.code, expectedError.code)
+	// Check that the message is related to the template not existing
+	t.regex(error?.message, /does not exist/)
+	// Check that only the `error` and `meta` fields were returned.
+	t.is(data, undefined)
 })
 
 test.serial('get /templates/{id} | 200 okay', async (t) => {
@@ -107,8 +145,8 @@ test.serial('get /templates/{id} | 200 okay', async (t) => {
 
 	const { meta, error, data } = json.parse(response.payload)
 
-	// Check that the request is successful and that it returns a blank array
-	// (since there are no templates in the database yet).
+	// Check that the request is successful and that it returns the template
+	// requested.
 	t.is(meta?.status, 200)
 	t.is(error, undefined)
 	t.deepEqual(data, template)

@@ -1,18 +1,18 @@
 {
 	"template": {
-		"template": "Hello <%= data.name %>",
+		"template": "Hello <%= data.type %>",
 		"renderer": "ejs",
 		"schema": {
 			"type": "object",
 			"properties": {
-				"name": { "type": "string" }
+				"type": { "enum": ["person", "cat"] }
 			},
-			"required": ["name"],
+			"required": ["type"],
 			"additionalProperties": false
 		}
 	},
 	"data": {
-		"date": "28-06-2022"
+		"type": "human"
 	},
 	"output": "htm"
 }
