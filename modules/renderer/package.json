@@ -1,7 +1,7 @@
 {
-	"name": "@verifiable-presentation/template-store",
+	"name": "@verifiable-presentation/renderer",
 	"version": "0.0.0",
-	"description": "A service that stores templates for verifiable presentations designed by an issuer.",
+	"description": "A service that accepts data and a template and renders the presentation in the requested format.",
 	"type": "module",
 	"scripts": {
 		"clean": "tsx ./scripts/clean.ts",
@@ -19,16 +19,18 @@
 	},
 	"dependencies": {
 		"@milahu/patch-package": "6.4.14",
+		"ajv": "8.11.0",
+		"ejs": "3.1.8",
 		"fastify": "4.0.3",
 		"fastify-plugin": "3.0.1",
 		"got": "12.1.0",
-		"lowdb": "3.0.0",
 		"nanoid": "4.0.0",
 		"pino": "8.0.0",
 		"pino-pretty": "8.0.0",
 		"stacktrace-parser": "0.1.10"
 	},
 	"devDependencies": {
+		"@types/ejs": "3.1.1",
 		"ava": "4.3.0",
 		"chalk": "5.0.1",
 		"dotenv": "16.0.1",

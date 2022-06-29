@@ -1,0 +1,18 @@
+{
+	"template": {
+		"template": "Hello <%= data.name %>",
+		"renderer": "ejs",
+		"schema": {
+			"type": "object",
+			"properties": {
+				"name": { "type": "string" }
+			},
+			"required": ["name"],
+			"additionalProperties": false
+		}
+	},
+	"data": {
+		"name": "Happy"
+	},
+	"output": "htm"
+}

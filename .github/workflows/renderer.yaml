@@ -1,8 +1,8 @@
-# .github/workflows/template-store.yaml
+# .github/workflows/renderer.yaml
 # Lints and tests the server every time a commit is pushed to the remote
 # repository.
 
-name: Template Store
+name: Renderer
 on: [push, pull_request]
 jobs:
   lint:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./modules/template-store/
+        working-directory: ./modules/renderer/
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v2
@@ -24,7 +24,7 @@ jobs:
           node-version: 18
           registry-url: 'https://registry.npmjs.org/'
           cache: 'pnpm'
-          cache-dependency-path: ./modules/template-store/pnpm-lock.yaml
+          cache-dependency-path: ./modules/renderer/pnpm-lock.yaml
       - name: Install dependencies
         run: pnpm install
       - name: Check for errors in code/formatting
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./modules/template-store/
+        working-directory: ./modules/renderer/
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v2
@@ -48,7 +48,7 @@ jobs:
           node-version: 18
           registry-url: 'https://registry.npmjs.org/'
           cache: 'pnpm'
-          cache-dependency-path: ./modules/template-store/pnpm-lock.yaml
+          cache-dependency-path: ./modules/renderer/pnpm-lock.yaml
       - name: Install dependencies
         run: pnpm install
       - name: Run all tests

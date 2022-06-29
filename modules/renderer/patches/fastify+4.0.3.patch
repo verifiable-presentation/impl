@@ -1,0 +1,17 @@
+# patches/fastify+4.0.3.patch
+# A patch that makes Fastify's `listen` function quiet.
+
+diff --git a/node_modules/fastify/lib/server.js b/node_modules/fastify/lib/server.js
+index 46a2f76..2c085f0 100644
+--- a/node_modules/fastify/lib/server.js
++++ b/node_modules/fastify/lib/server.js
+@@ -343,7 +343,8 @@ function logServerAddress (server) {
+   /* istanbul ignore next */
+   address = (isUnixSocket ? '' : ('http' + (this[kOptions].https ? 's' : '') + '://')) + address
+ 
+-  this.log.info('Server listening at ' + address)
++  // this.log.info('Server listening at ' + address)
++  
+   return address
+ }
+ 

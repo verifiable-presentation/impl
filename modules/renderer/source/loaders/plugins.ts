@@ -12,7 +12,8 @@ import type {
 import pluginify from 'fastify-plugin'
 import { parse } from 'stacktrace-parser'
 
-import { database } from '../provider/database.js'
+import { renderer } from '../provider/renderer.js'
+import { schema } from '../provider/schema.js'
 import { logger } from '../utilities/logger.js'
 import { ServerError } from '../utilities/errors.js'
 
@@ -49,8 +50,9 @@ export const plugins = pluginify(async (server: FastifyInstance) => {
 		},
 	)
 
-	// Decorate the server instance with the database provider.
-	server.decorate('database', database)
+	// Decorate the server instance with the renderer provider.
+	server.decorate('renderer', renderer)
+	server.decorate('schema', schema)
 
 	// Handle not found errors.
 	server.setNotFoundHandler((_request, _reply) => {

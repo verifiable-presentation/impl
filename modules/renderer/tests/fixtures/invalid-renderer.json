@@ -1,0 +1,10 @@
+{
+	"template": {
+		"template": "Hello ${data.name}",
+		"renderer": "jstl"
+	},
+	"data": {
+		"name": "Happy"
+	},
+	"output": "htm"
+}
