@@ -1,5 +1,5 @@
 // source/utilities/errors.ts
-// We <3 errors! No, not really (ノ^▿^)ノ
+// We <3 errors! No, not really (/^▿^)/
 
 /**
  * A list of errors we can return.
