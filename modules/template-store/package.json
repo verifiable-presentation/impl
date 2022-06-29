@@ -77,5 +77,14 @@
 			"--loader=tsx",
 			"--no-warnings"
 		]
+	},
+	"c8": {
+		"reporter": [
+			"html",
+			"text"
+		],
+		"lines": 95,
+		"branches": 90,
+		"statements": 95
 	}
 }
