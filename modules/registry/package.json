@@ -1,7 +1,7 @@
 {
-	"name": "@verifiable-presentation/template-store",
+	"name": "@verifiable-presentation/registry",
 	"version": "0.0.0",
-	"description": "A service that stores templates for verifiable presentations designed by an issuer.",
+	"description": "A service that stores verifiable presentations for retrieval and verification by holders.",
 	"type": "module",
 	"scripts": {
 		"clean": "tsx ./scripts/clean.ts",

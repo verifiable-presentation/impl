@@ -28,7 +28,7 @@ test.before(async (t) => {
 })
 // Cleanup the database after all the tests have run.
 test.after(async () => {
-	database.data = null
+	database.data = { templates: [] }
 	await database.write()
 })
 
