@@ -15,6 +15,9 @@ export const routes = async (server: FastifyInstance) => {
 	logger.silly('registering routes')
 
 	server.get('/presentations', {
+		schema: {
+			querystring: { $ref: 'dtos#/definitions/PresentationQuery' },
+		},
 		handler: handlers.presentations.list,
 	})
 

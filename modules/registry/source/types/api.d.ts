@@ -69,3 +69,10 @@ export declare interface Presentation {
  * The payload required to create a `Presentation`.
  */
 export declare type PresentationDto = Presentation
+
+/**
+ * The query for Presentations.
+ */
+export declare type PresentationQuery = {
+	subject?: string
+}

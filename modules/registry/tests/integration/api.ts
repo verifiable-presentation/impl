@@ -98,7 +98,7 @@ test('post /presentations | 201 created', async (t) => {
 	t.deepEqual(database.data?.presentations, t.context.presentations)
 })
 
-test('get /presentations | 200 okay', async (t) => {
+test('get /presentations | 200 okay [lists presentations]', async (t) => {
 	const response = await t.context.server.inject({
 		method: 'get',
 		url: '/presentations',
@@ -111,6 +111,39 @@ test('get /presentations | 200 okay', async (t) => {
 	t.is(meta?.status, 200)
 	t.is(error, undefined)
 	t.deepEqual(data, t.context.presentations)
+})
+
+test('get /presentations | 200 okay [finds by subject]', async (t) => {
+	const presentation = t.context.presentations[0]
+	const credential = presentation.verifiableCredential[0]
+	const response = await t.context.server.inject({
+		method: 'get',
+		url: '/presentations',
+		query: { subject: credential.credentialSubject.id as string },
+	})
+
+	const { meta, error, data } = json.parse(response.payload)
+
+	// Check that the request is successful and that it returns an array
+	// containing the one presentation we are searching for.
+	t.is(meta?.status, 200)
+	t.is(error, undefined)
+	t.deepEqual(data, [presentation])
+})
+
+test('get /presentations | 200 okay [specified subject does not exist]', async (t) => {
+	const response = await t.context.server.inject({
+		method: 'get',
+		url: '/presentations',
+		query: { subject: 'dhh' },
+	})
+
+	const { meta, error, data } = json.parse(response.payload)
+
+	// Check that the request is successful and that it returns an empty array.
+	t.is(meta?.status, 200)
+	t.is(error, undefined)
+	t.deepEqual(data, [])
 })
 
 test('put /presentations/{id} | 404 entity-not-found', async (t) => {

@@ -22,6 +22,13 @@ export const schemas = pluginify(async (server: FastifyInstance) => {
 		definitions: {
 			// eslint-disable-next-line @typescript-eslint/naming-convention
 			PresentationDto: { $ref: 'schemas#/definitions/Presentation' },
+			// eslint-disable-next-line @typescript-eslint/naming-convention
+			PresentationQuery: {
+				type: 'object',
+				properties: {
+					subject: { $ref: 'schemas#/definitions/Did' },
+				},
+			},
 		},
 	})
 
