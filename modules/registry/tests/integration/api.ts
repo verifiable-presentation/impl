@@ -113,13 +113,12 @@ test('get /presentations | 200 okay [lists presentations]', async (t) => {
 	t.deepEqual(data, t.context.presentations)
 })
 
-test('get /presentations | 200 okay [finds by subject]', async (t) => {
+test('get /presentations | 200 okay [finds by holder]', async (t) => {
 	const presentation = t.context.presentations[0]
-	const credential = presentation.verifiableCredential[0]
 	const response = await t.context.server.inject({
 		method: 'get',
 		url: '/presentations',
-		query: { subject: credential.credentialSubject.id as string },
+		query: { holder: presentation.holder },
 	})
 
 	const { meta, error, data } = json.parse(response.payload)
@@ -131,11 +130,11 @@ test('get /presentations | 200 okay [finds by subject]', async (t) => {
 	t.deepEqual(data, [presentation])
 })
 
-test('get /presentations | 200 okay [specified subject does not exist]', async (t) => {
+test('get /presentations | 200 okay [specified holder does not exist]', async (t) => {
 	const response = await t.context.server.inject({
 		method: 'get',
 		url: '/presentations',
-		query: { subject: 'dhh' },
+		query: { holder: 'dhh' },
 	})
 
 	const { meta, error, data } = json.parse(response.payload)

@@ -26,7 +26,7 @@ export const schemas = pluginify(async (server: FastifyInstance) => {
 			PresentationQuery: {
 				type: 'object',
 				properties: {
-					subject: { $ref: 'schemas#/definitions/Did' },
+					holder: { $ref: 'schemas#/definitions/Did' },
 				},
 			},
 		},
@@ -128,6 +128,7 @@ export const schemas = pluginify(async (server: FastifyInstance) => {
 				type: 'object',
 				properties: {
 					id: { $ref: 'schemas#/definitions/Did' },
+					holder: { $ref: 'schemas#/definitions/Did' },
 					// eslint-disable-next-line @typescript-eslint/naming-convention
 					'@context': { $ref: 'schemas#/definitions/Context' },
 					type: { $ref: 'schemas#/definitions/PresentationType' },
@@ -137,7 +138,14 @@ export const schemas = pluginify(async (server: FastifyInstance) => {
 					},
 					proof: { $ref: 'schemas#/definitions/Proof' },
 				},
-				required: ['id', '@context', 'type', 'verifiableCredential', 'proof'],
+				required: [
+					'id',
+					'holder',
+					'@context',
+					'type',
+					'verifiableCredential',
+					'proof',
+				],
 				additionalProperties: true,
 			},
 		},

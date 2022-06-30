@@ -56,6 +56,7 @@ export declare interface Credential {
  */
 export declare interface Presentation {
 	id: Did
+	holder: Did
 	'@context': Context
 	type: PresentationType
 	verifiableCredential: Credential[]
@@ -74,5 +75,5 @@ export declare type PresentationDto = Presentation
  * The query for Presentations.
  */
 export declare type PresentationQuery = {
-	subject?: string
+	holder?: string
 }

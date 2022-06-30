@@ -4,6 +4,7 @@
 		"https://www.w3.org/2018/credentials/examples/v1"
 	],
 	"id": "did:example:mTvrhQMMf6KBEJFItejG0tpohz5U",
+	"holder": "did:example:tpohz5uFEJFIteq3jY7vaG4gROLb",
 	"type": "VerifiablePresentation",
 	"verifiableCredential": [
 		{

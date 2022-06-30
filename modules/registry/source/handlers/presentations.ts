@@ -3,11 +3,7 @@
 
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import type { DecoratedFastifyInstance } from '../types/fastify.js'
-import type {
-	Credential,
-	PresentationDto,
-	PresentationQuery,
-} from '../types/api.js'
+import type { PresentationDto, PresentationQuery } from '../types/api.js'
 
 import { logger } from '../utilities/logger.js'
 import { ServerError } from '../utilities/errors.js'
@@ -19,16 +15,13 @@ export const list = async (request: FastifyRequest, reply: FastifyReply) => {
 	const server = request.server as DecoratedFastifyInstance
 	const query = request.query as PresentationQuery
 
-	logger.silly('fetching presentation list from database', query.subject)
+	logger.silly('fetching presentation list from database', query.holder)
 
 	const presentations =
-		typeof query.subject === 'string'
-			? // Find a presentation whose credentials have the ID specified in the query.
-			  server.database.data!.presentations.filter((presentation) =>
-					presentation.verifiableCredential.some(
-						(credential: Credential) =>
-							credential.credentialSubject.id === query.subject,
-					),
+		typeof query.holder === 'string'
+			? // Find a presentation that is held by the entity specified in the query.
+			  server.database.data!.presentations.filter(
+					(presentation) => presentation.holder === query.holder,
 			  )
 			: // Else just return all the presentations.
 			  server.database.data!.presentations
