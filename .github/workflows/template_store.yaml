@@ -1,4 +1,4 @@
-# .github/workflows/template-store.yaml
+# .github/workflows/template_store.yaml
 # Lints and tests the server every time a commit is pushed to the remote
 # repository.
 
