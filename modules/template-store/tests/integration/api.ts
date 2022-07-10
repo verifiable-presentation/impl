@@ -10,6 +10,7 @@ import { fixture } from '../helpers/fixtures.js'
 
 import { build } from '../../source/loaders/index.js'
 import { database } from '../../source/provider/database.js'
+import { config } from '../../source/utilities/config.js'
 import { ServerError } from '../../source/utilities/errors.js'
 import { Template } from '../../source/types/api.js'
 
@@ -150,4 +151,47 @@ test.serial('get /templates/{id} | 200 okay', async (t) => {
 	t.is(meta?.status, 200)
 	t.is(error, undefined)
 	t.deepEqual(data, template)
+})
+
+test.serial(
+	'get /templates/{id}/did.json | 404 entity-not-found',
+	async (t) => {
+		const response = await t.context.server.inject({
+			method: 'get',
+			url: '/templates/dhh/did.json',
+		})
+
+		const { meta, error, data } = json.parse(response.payload)
+		const expectedError = new ServerError('entity-not-found')
+
+		// Check that the request failed with the expected HTTP status code and
+		// error code.
+		t.is(meta?.status, expectedError.status)
+		t.is(error?.code, expectedError.code)
+		// Check that the message is related to the template not existing
+		t.regex(error?.message, /does not exist/)
+		// Check that only the `error` and `meta` fields were returned.
+		t.is(data, undefined)
+	},
+)
+
+test.serial('get /templates/{id}/did.json | 200 okay', async (t) => {
+	const template = t.context.templates[0]
+	const response = await t.context.server.inject({
+		method: 'get',
+		url: `/templates/${template.id}/did.json`,
+	})
+
+	const document = json.parse(response.payload)
+	const expectedDocument = {
+		// eslint-disable-next-line @typescript-eslint/naming-convention
+		'@context': ['https://www.w3.org/ns/did/v1'],
+		...template,
+		id: `did:web:${config.domain}:templates:${template.id}`,
+	}
+
+	// Check that the request is successful and that it returns the template
+	// requested.
+	t.is(response.statusCode, 200)
+	t.deepEqual(document, expectedDocument)
 })

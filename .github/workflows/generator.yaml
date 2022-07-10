@@ -1,0 +1,55 @@
+# .github/workflows/generator.yaml
+# Lints and tests the server every time a commit is pushed to the remote
+# repository.
+
+name: Generator
+on: [push, pull_request]
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./modules/generator/
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+      - name: Setup PNPM 7
+        uses: pnpm/action-setup@v2.0.1
+        with:
+          version: latest
+      - name: Setup Node 18
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18
+          registry-url: 'https://registry.npmjs.org/'
+          cache: 'pnpm'
+          cache-dependency-path: ./modules/generator/pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install
+      - name: Check for errors in code/formatting
+        run: pnpm lint
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./modules/generator/
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+      - name: Setup PNPM 7
+        uses: pnpm/action-setup@v2.0.1
+        with:
+          version: latest
+      - name: Setup Node 18
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18
+          registry-url: 'https://registry.npmjs.org/'
+          cache: 'pnpm'
+          cache-dependency-path: ./modules/generator/pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run all tests
+        run: pnpm test

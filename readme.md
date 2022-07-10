@@ -7,7 +7,7 @@
 ## Specification
 
 The detailed specification for this service can be found in the
-[`spec`](github.com/verifiable-presentation/spec) repo.
+[`spec`](https://github.com/verifiable-presentation/spec) repo.
 
 ## Implementation
 

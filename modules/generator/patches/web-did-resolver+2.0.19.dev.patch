@@ -1,0 +1,1228 @@
+# patches/web-did-resolver+2.0.19.dev.patch
+# A patch that allows DIDs to be resolved using `http` URLs that is only applied in development mode.
+
+diff --git a/node_modules/web-did-resolver/lib/resolver.cjs b/node_modules/web-did-resolver/lib/resolver.cjs
+index 531b1e9..75805ac 100644
+--- a/node_modules/web-did-resolver/lib/resolver.cjs
++++ b/node_modules/web-did-resolver/lib/resolver.cjs
+@@ -4,298 +4,62 @@ function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'defau
+ 
+ var fetch__default = /*#__PURE__*/_interopDefaultLegacy(fetch);
+ 
+-function _catch(body, recover) {
+-  try {
+-    var result = body();
+-  } catch (e) {
+-    return recover(e);
+-  }
+-
+-  if (result && result.then) {
+-    return result.then(void 0, recover);
+-  }
+-
+-  return result;
+-}
+-
++const DOC_PATH = '/.well-known/did.json';
+ // eslint-disable-next-line @typescript-eslint/no-explicit-any
+-const get = function (url) {
+-  try {
+-    return Promise.resolve(fetch__default["default"](url, {
+-      mode: 'cors'
+-    })).then(function (res) {
+-      if (res.status >= 400) {
++async function get(url) {
++    const res = await fetch__default["default"](url, { mode: 'cors' });
++    if (res.status >= 400) {
+         throw new Error(`Bad response ${res.statusText}`);
+-      }
+-
+-      return res.json();
+-    });
+-  } catch (e) {
+-    return Promise.reject(e);
+-  }
+-};
+-
+-function _settle(pact, state, value) {
+-  if (!pact.s) {
+-    if (value instanceof _Pact) {
+-      if (value.s) {
+-        if (state & 1) {
+-          state = value.s;
+-        }
+-
+-        value = value.v;
+-      } else {
+-        value.o = _settle.bind(null, pact, state);
+-        return;
+-      }
+-    }
+-
+-    if (value && value.then) {
+-      value.then(_settle.bind(null, pact, state), _settle.bind(null, pact, 2));
+-      return;
+-    }
+-
+-    pact.s = state;
+-    pact.v = value;
+-    const observer = pact.o;
+-
+-    if (observer) {
+-      observer(pact);
+-    }
+-  }
+-}
+-
+-const DOC_PATH = '/.well-known/did.json';
+-
+-const _Pact = /*#__PURE__*/function () {
+-  function _Pact() {}
+-
+-  _Pact.prototype.then = function (onFulfilled, onRejected) {
+-    const result = new _Pact();
+-    const state = this.s;
+-
+-    if (state) {
+-      const callback = state & 1 ? onFulfilled : onRejected;
+-
+-      if (callback) {
+-        try {
+-          _settle(result, 1, callback(this.v));
+-        } catch (e) {
+-          _settle(result, 2, e);
+-        }
+-
+-        return result;
+-      } else {
+-        return this;
+-      }
+     }
+-
+-    this.o = function (_this) {
+-      try {
+-        const value = _this.v;
+-
+-        if (_this.s & 1) {
+-          _settle(result, 1, onFulfilled ? onFulfilled(value) : value);
+-        } else if (onRejected) {
+-          _settle(result, 1, onRejected(value));
+-        } else {
+-          _settle(result, 2, value);
+-        }
+-      } catch (e) {
+-        _settle(result, 2, e);
+-      }
+-    };
+-
+-    return result;
+-  };
+-
+-  return _Pact;
+-}();
+-
+-function _isSettledPact(thenable) {
+-  return thenable instanceof _Pact && thenable.s & 1;
++    return res.json();
+ }
+-
+-function _do(body, test) {
+-  var awaitBody;
+-
+-  do {
+-    var result = body();
+-
+-    if (result && result.then) {
+-      if (_isSettledPact(result)) {
+-        result = result.v;
+-      } else {
+-        awaitBody = true;
+-        break;
+-      }
+-    }
+-
+-    var shouldContinue = test();
+-
+-    if (_isSettledPact(shouldContinue)) {
+-      shouldContinue = shouldContinue.v;
+-    }
+-
+-    if (!shouldContinue) {
+-      return result;
+-    }
+-  } while (!shouldContinue.then);
+-
+-  const pact = new _Pact();
+-
+-  const reject = _settle.bind(null, pact, 2);
+-
+-  (awaitBody ? result.then(_resumeAfterBody) : shouldContinue.then(_resumeAfterTest)).then(void 0, reject);
+-  return pact;
+-
+-  function _resumeAfterBody(value) {
+-    result = value;
+-
+-    for (;;) {
+-      shouldContinue = test();
+-
+-      if (_isSettledPact(shouldContinue)) {
+-        shouldContinue = shouldContinue.v;
+-      }
+-
+-      if (!shouldContinue) {
+-        break;
+-      }
+-
+-      if (shouldContinue.then) {
+-        shouldContinue.then(_resumeAfterTest).then(void 0, reject);
+-        return;
+-      }
+-
+-      result = body();
+-
+-      if (result && result.then) {
+-        if (_isSettledPact(result)) {
+-          result = result.v;
+-        } else {
+-          result.then(_resumeAfterBody).then(void 0, reject);
+-          return;
+-        }
+-      }
+-    }
+-
+-    _settle(pact, 1, result);
+-  }
+-
+-  function _resumeAfterTest(shouldContinue) {
+-    if (shouldContinue) {
+-      do {
+-        result = body();
+-
+-        if (result && result.then) {
+-          if (_isSettledPact(result)) {
+-            result = result.v;
+-          } else {
+-            result.then(_resumeAfterBody).then(void 0, reject);
+-            return;
+-          }
+-        }
+-
+-        shouldContinue = test();
+-
+-        if (_isSettledPact(shouldContinue)) {
+-          shouldContinue = shouldContinue.v;
+-        }
+-
+-        if (!shouldContinue) {
+-          _settle(pact, 1, result);
+-
+-          return;
+-        }
+-      } while (!shouldContinue.then);
+-
+-      shouldContinue.then(_resumeAfterTest).then(void 0, reject);
+-    } else {
+-      _settle(pact, 1, result);
+-    }
+-  }
+-}
+-
+ function getResolver() {
+-  const resolve = function (did, parsed) {
+-    try {
+-      let _interrupt;
+-
+-      function _temp4() {
+-        var _didDocument;
+-
+-        const contentType = typeof ((_didDocument = didDocument) == null ? void 0 : _didDocument['@context']) !== 'undefined' ? 'application/did+ld+json' : 'application/did+json';
+-
+-        if (err) {
+-          return {
+-            didDocument,
+-            didDocumentMetadata,
+-            didResolutionMetadata: {
+-              error: 'notFound',
+-              message: err
++    async function resolve(did, parsed) {
++        let err = null;
++        let path = decodeURIComponent(parsed.id) + DOC_PATH;
++        const id = parsed.id.split(':');
++        if (id.length > 1) {
++            path = id.map(decodeURIComponent).join('/') + '/did.json';
++        }
++        const url = `http://${path}`;
++        const didDocumentMetadata = {};
++        let didDocument = null;
++        do {
++            try {
++                didDocument = await get(url);
+             }
+-          };
+-        } else {
+-          return {
+-            didDocument,
+-            didDocumentMetadata,
+-            didResolutionMetadata: {
+-              contentType
++            catch (error) {
++                err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`;
++                break;
+             }
+-          };
+-        }
+-      }
+-
+-      let err = null;
+-      let path = decodeURIComponent(parsed.id) + DOC_PATH;
+-      const id = parsed.id.split(':');
+-
+-      if (id.length > 1) {
+-        path = id.map(decodeURIComponent).join('/') + '/did.json';
+-      }
+-
+-      const url = `https://${path}`;
+-      const didDocumentMetadata = {};
+-      let didDocument = null;
+-
+-      const _temp3 = _do(function () {
+-        function _temp2() {
+-          if (!_interrupt) {
+-            var _didDocument2;
+-
+             // TODO: this excludes the use of query params
+-            const docIdMatchesDid = ((_didDocument2 = didDocument) == null ? void 0 : _didDocument2.id) === did;
+-
++            const docIdMatchesDid = didDocument?.id === did;
+             if (!docIdMatchesDid) {
+-              err = 'resolver_error: DID document id does not match requested did'; // break // uncomment this when adding more checks
++                err = 'resolver_error: DID document id does not match requested did';
++                // break // uncomment this when adding more checks
+             }
+-          }
++            // eslint-disable-next-line no-constant-condition
++        } while (false);
++        const contentType = typeof didDocument?.['@context'] !== 'undefined' ? 'application/did+ld+json' : 'application/did+json';
++        if (err) {
++            return {
++                didDocument,
++                didDocumentMetadata,
++                didResolutionMetadata: {
++                    error: 'notFound',
++                    message: err,
++                },
++            };
++        }
++        else {
++            return {
++                didDocument,
++                didDocumentMetadata,
++                didResolutionMetadata: { contentType },
++            };
+         }
+-
+-        const _temp = _catch(function () {
+-          return Promise.resolve(get(url)).then(function (_get) {
+-            didDocument = _get;
+-          });
+-        }, function (error) {
+-          err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`;
+-          _interrupt = 1;
+-        });
+-
+-        return _temp && _temp.then ? _temp.then(_temp2) : _temp2(_temp); // eslint-disable-next-line no-constant-condition
+-      }, function () {
+-        return !_interrupt && false;
+-      });
+-
+-      return Promise.resolve(_temp3 && _temp3.then ? _temp3.then(_temp4) : _temp4(_temp3));
+-    } catch (e) {
+-      return Promise.reject(e);
+     }
+-  };
+-
+-  return {
+-    web: resolve
+-  };
++    return { web: resolve };
+ }
+ 
+ exports.getResolver = getResolver;
+diff --git a/node_modules/web-did-resolver/lib/resolver.cjs.map b/node_modules/web-did-resolver/lib/resolver.cjs.map
+index 04d06af..83a92aa 100644
+--- a/node_modules/web-did-resolver/lib/resolver.cjs.map
++++ b/node_modules/web-did-resolver/lib/resolver.cjs.map
+@@ -1 +1 @@
+-{"version":3,"file":"resolver.cjs","sources":["../src/resolver.ts"],"sourcesContent":["import fetch from 'cross-fetch'\nimport { DIDDocument, DIDResolutionResult, DIDResolver, ParsedDID } from 'did-resolver'\n\nconst DOC_PATH = '/.well-known/did.json'\n\n// eslint-disable-next-line @typescript-eslint/no-explicit-any\nasync function get(url: string): Promise<any> {\n  const res = await fetch(url, { mode: 'cors' })\n  if (res.status >= 400) {\n    throw new Error(`Bad response ${res.statusText}`)\n  }\n  return res.json()\n}\n\nexport function getResolver(): Record<string, DIDResolver> {\n  async function resolve(did: string, parsed: ParsedDID): Promise<DIDResolutionResult> {\n    let err = null\n    let path = decodeURIComponent(parsed.id) + DOC_PATH\n    const id = parsed.id.split(':')\n    if (id.length > 1) {\n      path = id.map(decodeURIComponent).join('/') + '/did.json'\n    }\n\n    const url = `https://${path}`\n\n    const didDocumentMetadata = {}\n    let didDocument: DIDDocument | null = null\n\n    do {\n      try {\n        didDocument = await get(url)\n      } catch (error) {\n        err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`\n        break\n      }\n\n      // TODO: this excludes the use of query params\n      const docIdMatchesDid = didDocument?.id === did\n      if (!docIdMatchesDid) {\n        err = 'resolver_error: DID document id does not match requested did'\n        // break // uncomment this when adding more checks\n      }\n      // eslint-disable-next-line no-constant-condition\n    } while (false)\n\n    const contentType =\n      typeof didDocument?.['@context'] !== 'undefined' ? 'application/did+ld+json' : 'application/did+json'\n\n    if (err) {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: {\n          error: 'notFound',\n          message: err,\n        },\n      }\n    } else {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: { contentType },\n      }\n    }\n  }\n\n  return { web: resolve }\n}\n"],"names":["get","url","fetch","mode","res","status","Error","statusText","json","_settle","pact","state","value","_Pact","s","v","o","bind","then","DOC_PATH","prototype","onFulfilled","onRejected","result","callback","e","_this","getResolver","resolve","did","parsed","contentType","didDocument","err","didDocumentMetadata","didResolutionMetadata","error","message","path","decodeURIComponent","id","split","length","map","join","docIdMatchesDid","web"],"mappings":"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"}
+\ No newline at end of file
++{"version":3,"file":"resolver.cjs","sources":["../src/resolver.ts"],"sourcesContent":["import fetch from 'cross-fetch'\nimport { DIDDocument, DIDResolutionResult, DIDResolver, ParsedDID } from 'did-resolver'\n\nconst DOC_PATH = '/.well-known/did.json'\n\n// eslint-disable-next-line @typescript-eslint/no-explicit-any\nasync function get(url: string): Promise<any> {\n  const res = await fetch(url, { mode: 'cors' })\n  if (res.status >= 400) {\n    throw new Error(`Bad response ${res.statusText}`)\n  }\n  return res.json()\n}\n\nexport function getResolver(): Record<string, DIDResolver> {\n  async function resolve(did: string, parsed: ParsedDID): Promise<DIDResolutionResult> {\n    let err = null\n    let path = decodeURIComponent(parsed.id) + DOC_PATH\n    const id = parsed.id.split(':')\n    if (id.length > 1) {\n      path = id.map(decodeURIComponent).join('/') + '/did.json'\n    }\n\n    const url = `http://${path}`\n\n    const didDocumentMetadata = {}\n    let didDocument: DIDDocument | null = null\n\n    do {\n      try {\n        didDocument = await get(url)\n      } catch (error) {\n        err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`\n        break\n      }\n\n      // TODO: this excludes the use of query params\n      const docIdMatchesDid = didDocument?.id === did\n      if (!docIdMatchesDid) {\n        err = 'resolver_error: DID document id does not match requested did'\n        // break // uncomment this when adding more checks\n      }\n      // eslint-disable-next-line no-constant-condition\n    } while (false)\n\n    const contentType =\n      typeof didDocument?.['@context'] !== 'undefined' ? 'application/did+ld+json' : 'application/did+json'\n\n    if (err) {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: {\n          error: 'notFound',\n          message: err,\n        },\n      }\n    } else {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: { contentType },\n      }\n    }\n  }\n\n  return { web: resolve }\n}\n"],"names":["fetch"],"mappings":";;;;;;AAGA,MAAM,QAAQ,GAAG,uBAAuB,CAAA;AAExC;AACA,eAAe,GAAG,CAAC,GAAW,EAAA;AAC5B,IAAA,MAAM,GAAG,GAAG,MAAMA,yBAAK,CAAC,GAAG,EAAE,EAAE,IAAI,EAAE,MAAM,EAAE,CAAC,CAAA;AAC9C,IAAA,IAAI,GAAG,CAAC,MAAM,IAAI,GAAG,EAAE;QACrB,MAAM,IAAI,KAAK,CAAC,CAAA,aAAA,EAAgB,GAAG,CAAC,UAAU,CAAE,CAAA,CAAC,CAAA;AAClD,KAAA;AACD,IAAA,OAAO,GAAG,CAAC,IAAI,EAAE,CAAA;AACnB,CAAC;SAEe,WAAW,GAAA;AACzB,IAAA,eAAe,OAAO,CAAC,GAAW,EAAE,MAAiB,EAAA;QACnD,IAAI,GAAG,GAAG,IAAI,CAAA;QACd,IAAI,IAAI,GAAG,kBAAkB,CAAC,MAAM,CAAC,EAAE,CAAC,GAAG,QAAQ,CAAA;QACnD,MAAM,EAAE,GAAG,MAAM,CAAC,EAAE,CAAC,KAAK,CAAC,GAAG,CAAC,CAAA;AAC/B,QAAA,IAAI,EAAE,CAAC,MAAM,GAAG,CAAC,EAAE;AACjB,YAAA,IAAI,GAAG,EAAE,CAAC,GAAG,CAAC,kBAAkB,CAAC,CAAC,IAAI,CAAC,GAAG,CAAC,GAAG,WAAW,CAAA;AAC1D,SAAA;AAED,QAAA,MAAM,GAAG,GAAG,CAAU,OAAA,EAAA,IAAI,EAAE,CAAA;QAE5B,MAAM,mBAAmB,GAAG,EAAE,CAAA;QAC9B,IAAI,WAAW,GAAuB,IAAI,CAAA;QAE1C,GAAG;YACD,IAAI;AACF,gBAAA,WAAW,GAAG,MAAM,GAAG,CAAC,GAAG,CAAC,CAAA;AAC7B,aAAA;AAAC,YAAA,OAAO,KAAK,EAAE;AACd,gBAAA,GAAG,GAAG,CAAA,kFAAA,EAAqF,KAAK,CAAA,CAAE,CAAA;gBAClG,MAAK;AACN,aAAA;;AAGD,YAAA,MAAM,eAAe,GAAG,WAAW,EAAE,EAAE,KAAK,GAAG,CAAA;YAC/C,IAAI,CAAC,eAAe,EAAE;gBACpB,GAAG,GAAG,8DAA8D,CAAA;;AAErE,aAAA;;AAEF,SAAA,QAAQ,KAAK,EAAC;AAEf,QAAA,MAAM,WAAW,GACf,OAAO,WAAW,GAAG,UAAU,CAAC,KAAK,WAAW,GAAG,yBAAyB,GAAG,sBAAsB,CAAA;AAEvG,QAAA,IAAI,GAAG,EAAE;YACP,OAAO;gBACL,WAAW;gBACX,mBAAmB;AACnB,gBAAA,qBAAqB,EAAE;AACrB,oBAAA,KAAK,EAAE,UAAU;AACjB,oBAAA,OAAO,EAAE,GAAG;AACb,iBAAA;aACF,CAAA;AACF,SAAA;AAAM,aAAA;YACL,OAAO;gBACL,WAAW;gBACX,mBAAmB;gBACnB,qBAAqB,EAAE,EAAE,WAAW,EAAE;aACvC,CAAA;AACF,SAAA;KACF;AAED,IAAA,OAAO,EAAE,GAAG,EAAE,OAAO,EAAE,CAAA;AACzB;;;;"}
+\ No newline at end of file
+diff --git a/node_modules/web-did-resolver/lib/resolver.modern.js b/node_modules/web-did-resolver/lib/resolver.modern.js
+index 84748e1..b76e0be 100644
+--- a/node_modules/web-did-resolver/lib/resolver.modern.js
++++ b/node_modules/web-did-resolver/lib/resolver.modern.js
+@@ -1,79 +1,61 @@
+ import fetch from 'cross-fetch';
+ 
+-const DOC_PATH = '/.well-known/did.json'; // eslint-disable-next-line @typescript-eslint/no-explicit-any
+-
++const DOC_PATH = '/.well-known/did.json';
++// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ async function get(url) {
+-  const res = await fetch(url, {
+-    mode: 'cors'
+-  });
+-
+-  if (res.status >= 400) {
+-    throw new Error(`Bad response ${res.statusText}`);
+-  }
+-
+-  return res.json();
++    const res = await fetch(url, { mode: 'cors' });
++    if (res.status >= 400) {
++        throw new Error(`Bad response ${res.statusText}`);
++    }
++    return res.json();
+ }
+-
+ function getResolver() {
+-  async function resolve(did, parsed) {
+-    var _didDocument2;
+-
+-    let err = null;
+-    let path = decodeURIComponent(parsed.id) + DOC_PATH;
+-    const id = parsed.id.split(':');
+-
+-    if (id.length > 1) {
+-      path = id.map(decodeURIComponent).join('/') + '/did.json';
+-    }
+-
+-    const url = `https://${path}`;
+-    const didDocumentMetadata = {};
+-    let didDocument = null;
+-
+-    do {
+-      var _didDocument;
+-
+-      try {
+-        didDocument = await get(url);
+-      } catch (error) {
+-        err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`;
+-        break;
+-      } // TODO: this excludes the use of query params
+-
+-
+-      const docIdMatchesDid = ((_didDocument = didDocument) == null ? void 0 : _didDocument.id) === did;
+-
+-      if (!docIdMatchesDid) {
+-        err = 'resolver_error: DID document id does not match requested did'; // break // uncomment this when adding more checks
+-      } // eslint-disable-next-line no-constant-condition
+-
+-    } while (false);
+-
+-    const contentType = typeof ((_didDocument2 = didDocument) == null ? void 0 : _didDocument2['@context']) !== 'undefined' ? 'application/did+ld+json' : 'application/did+json';
+-
+-    if (err) {
+-      return {
+-        didDocument,
+-        didDocumentMetadata,
+-        didResolutionMetadata: {
+-          error: 'notFound',
+-          message: err
++    async function resolve(did, parsed) {
++        let err = null;
++        let path = decodeURIComponent(parsed.id) + DOC_PATH;
++        const id = parsed.id.split(':');
++        if (id.length > 1) {
++            path = id.map(decodeURIComponent).join('/') + '/did.json';
+         }
+-      };
+-    } else {
+-      return {
+-        didDocument,
+-        didDocumentMetadata,
+-        didResolutionMetadata: {
+-          contentType
++        const url = `http://${path}`;
++        const didDocumentMetadata = {};
++        let didDocument = null;
++        do {
++            try {
++                didDocument = await get(url);
++            }
++            catch (error) {
++                err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`;
++                break;
++            }
++            // TODO: this excludes the use of query params
++            const docIdMatchesDid = didDocument?.id === did;
++            if (!docIdMatchesDid) {
++                err = 'resolver_error: DID document id does not match requested did';
++                // break // uncomment this when adding more checks
++            }
++            // eslint-disable-next-line no-constant-condition
++        } while (false);
++        const contentType = typeof didDocument?.['@context'] !== 'undefined' ? 'application/did+ld+json' : 'application/did+json';
++        if (err) {
++            return {
++                didDocument,
++                didDocumentMetadata,
++                didResolutionMetadata: {
++                    error: 'notFound',
++                    message: err,
++                },
++            };
++        }
++        else {
++            return {
++                didDocument,
++                didDocumentMetadata,
++                didResolutionMetadata: { contentType },
++            };
+         }
+-      };
+     }
+-  }
+-
+-  return {
+-    web: resolve
+-  };
++    return { web: resolve };
+ }
+ 
+ export { getResolver };
+diff --git a/node_modules/web-did-resolver/lib/resolver.modern.js.map b/node_modules/web-did-resolver/lib/resolver.modern.js.map
+index 4000389..a54a037 100644
+--- a/node_modules/web-did-resolver/lib/resolver.modern.js.map
++++ b/node_modules/web-did-resolver/lib/resolver.modern.js.map
+@@ -1 +1 @@
+-{"version":3,"file":"resolver.modern.js","sources":["../src/resolver.ts"],"sourcesContent":["import fetch from 'cross-fetch'\nimport { DIDDocument, DIDResolutionResult, DIDResolver, ParsedDID } from 'did-resolver'\n\nconst DOC_PATH = '/.well-known/did.json'\n\n// eslint-disable-next-line @typescript-eslint/no-explicit-any\nasync function get(url: string): Promise<any> {\n  const res = await fetch(url, { mode: 'cors' })\n  if (res.status >= 400) {\n    throw new Error(`Bad response ${res.statusText}`)\n  }\n  return res.json()\n}\n\nexport function getResolver(): Record<string, DIDResolver> {\n  async function resolve(did: string, parsed: ParsedDID): Promise<DIDResolutionResult> {\n    let err = null\n    let path = decodeURIComponent(parsed.id) + DOC_PATH\n    const id = parsed.id.split(':')\n    if (id.length > 1) {\n      path = id.map(decodeURIComponent).join('/') + '/did.json'\n    }\n\n    const url = `https://${path}`\n\n    const didDocumentMetadata = {}\n    let didDocument: DIDDocument | null = null\n\n    do {\n      try {\n        didDocument = await get(url)\n      } catch (error) {\n        err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`\n        break\n      }\n\n      // TODO: this excludes the use of query params\n      const docIdMatchesDid = didDocument?.id === did\n      if (!docIdMatchesDid) {\n        err = 'resolver_error: DID document id does not match requested did'\n        // break // uncomment this when adding more checks\n      }\n      // eslint-disable-next-line no-constant-condition\n    } while (false)\n\n    const contentType =\n      typeof didDocument?.['@context'] !== 'undefined' ? 'application/did+ld+json' : 'application/did+json'\n\n    if (err) {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: {\n          error: 'notFound',\n          message: err,\n        },\n      }\n    } else {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: { contentType },\n      }\n    }\n  }\n\n  return { web: resolve }\n}\n"],"names":["DOC_PATH","get","url","res","fetch","mode","status","Error","statusText","json","getResolver","resolve","did","parsed","err","path","decodeURIComponent","id","split","length","map","join","didDocumentMetadata","didDocument","error","docIdMatchesDid","contentType","didResolutionMetadata","message","web"],"mappings":";;AAGA,MAAMA,QAAQ,GAAG,uBAAjB;;AAGA,eAAeC,GAAf,CAAmBC,GAAnB,EAA8B;AAC5B,EAAA,MAAMC,GAAG,GAAG,MAAMC,KAAK,CAACF,GAAD,EAAM;AAAEG,IAAAA,IAAI,EAAE,MAAA;AAAR,GAAN,CAAvB,CAAA;;AACA,EAAA,IAAIF,GAAG,CAACG,MAAJ,IAAc,GAAlB,EAAuB;IACrB,MAAM,IAAIC,KAAJ,CAAU,CAAA,aAAA,EAAgBJ,GAAG,CAACK,UAAY,EAA1C,CAAN,CAAA;AACD,GAAA;;EACD,OAAOL,GAAG,CAACM,IAAJ,EAAP,CAAA;AACD,CAAA;;SAEeC,cAAW;AACzB,EAAA,eAAeC,OAAf,CAAuBC,GAAvB,EAAoCC,MAApC,EAAqD;AAAA,IAAA,IAAA,aAAA,CAAA;;IACnD,IAAIC,GAAG,GAAG,IAAV,CAAA;IACA,IAAIC,IAAI,GAAGC,kBAAkB,CAACH,MAAM,CAACI,EAAR,CAAlB,GAAgCjB,QAA3C,CAAA;IACA,MAAMiB,EAAE,GAAGJ,MAAM,CAACI,EAAP,CAAUC,KAAV,CAAgB,GAAhB,CAAX,CAAA;;AACA,IAAA,IAAID,EAAE,CAACE,MAAH,GAAY,CAAhB,EAAmB;MACjBJ,IAAI,GAAGE,EAAE,CAACG,GAAH,CAAOJ,kBAAP,CAAA,CAA2BK,IAA3B,CAAgC,GAAhC,CAAA,GAAuC,WAA9C,CAAA;AACD,KAAA;;AAED,IAAA,MAAMnB,GAAG,GAAc,CAAAa,QAAAA,EAAAA,KAAvB,CAAA,CAAA;IAEA,MAAMO,mBAAmB,GAAG,EAA5B,CAAA;IACA,IAAIC,WAAW,GAAuB,IAAtC,CAAA;;IAEA,GAAG;AAAA,MAAA,IAAA,YAAA,CAAA;;MACD,IAAI;AACFA,QAAAA,WAAW,GAAG,MAAMtB,GAAG,CAACC,GAAD,CAAvB,CAAA;OADF,CAEE,OAAOsB,KAAP,EAAc;QACdV,GAAG,GAAG,CAAqFU,kFAAAA,EAAAA,KAAK,CAAhG,CAAA,CAAA;AACA,QAAA,MAAA;AACD,OANA;;;MASD,MAAMC,eAAe,GAAG,CAAAF,CAAAA,YAAAA,GAAAA,WAAW,SAAX,GAAaN,KAAAA,CAAAA,GAAAA,YAAAA,CAAAA,EAAb,MAAoBL,GAA5C,CAAA;;MACA,IAAI,CAACa,eAAL,EAAsB;QACpBX,GAAG,GAAG,8DAAN,CADoB;AAGrB,OAbA;;AAeF,KAfD,QAeS,KAfT,EAAA;;AAiBA,IAAA,MAAMY,WAAW,GACf,QAAOH,CAAAA,aAAAA,GAAAA,WAAP,KAAO,IAAA,GAAA,KAAA,CAAA,GAAA,aAAA,CAAc,UAAd,CAAP,CAAqC,KAAA,WAArC,GAAmD,yBAAnD,GAA+E,sBADjF,CAAA;;AAGA,IAAA,IAAIT,GAAJ,EAAS;MACP,OAAO;QACLS,WADK;QAELD,mBAFK;AAGLK,QAAAA,qBAAqB,EAAE;AACrBH,UAAAA,KAAK,EAAE,UADc;AAErBI,UAAAA,OAAO,EAAEd,GAAAA;AAFY,SAAA;OAHzB,CAAA;AAQD,KATD,MASO;MACL,OAAO;QACLS,WADK;QAELD,mBAFK;AAGLK,QAAAA,qBAAqB,EAAE;AAAED,UAAAA,WAAAA;AAAF,SAAA;OAHzB,CAAA;AAKD,KAAA;AACF,GAAA;;EAED,OAAO;AAAEG,IAAAA,GAAG,EAAElB,OAAAA;GAAd,CAAA;AACD;;;;"}
+\ No newline at end of file
++{"version":3,"file":"resolver.modern.js","sources":["../src/resolver.ts"],"sourcesContent":["import fetch from 'cross-fetch'\nimport { DIDDocument, DIDResolutionResult, DIDResolver, ParsedDID } from 'did-resolver'\n\nconst DOC_PATH = '/.well-known/did.json'\n\n// eslint-disable-next-line @typescript-eslint/no-explicit-any\nasync function get(url: string): Promise<any> {\n  const res = await fetch(url, { mode: 'cors' })\n  if (res.status >= 400) {\n    throw new Error(`Bad response ${res.statusText}`)\n  }\n  return res.json()\n}\n\nexport function getResolver(): Record<string, DIDResolver> {\n  async function resolve(did: string, parsed: ParsedDID): Promise<DIDResolutionResult> {\n    let err = null\n    let path = decodeURIComponent(parsed.id) + DOC_PATH\n    const id = parsed.id.split(':')\n    if (id.length > 1) {\n      path = id.map(decodeURIComponent).join('/') + '/did.json'\n    }\n\n    const url = `http://${path}`\n\n    const didDocumentMetadata = {}\n    let didDocument: DIDDocument | null = null\n\n    do {\n      try {\n        didDocument = await get(url)\n      } catch (error) {\n        err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`\n        break\n      }\n\n      // TODO: this excludes the use of query params\n      const docIdMatchesDid = didDocument?.id === did\n      if (!docIdMatchesDid) {\n        err = 'resolver_error: DID document id does not match requested did'\n        // break // uncomment this when adding more checks\n      }\n      // eslint-disable-next-line no-constant-condition\n    } while (false)\n\n    const contentType =\n      typeof didDocument?.['@context'] !== 'undefined' ? 'application/did+ld+json' : 'application/did+json'\n\n    if (err) {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: {\n          error: 'notFound',\n          message: err,\n        },\n      }\n    } else {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: { contentType },\n      }\n    }\n  }\n\n  return { web: resolve }\n}\n"],"names":[],"mappings":";;AAGA,MAAM,QAAQ,GAAG,uBAAuB,CAAA;AAExC;AACA,eAAe,GAAG,CAAC,GAAW,EAAA;AAC5B,IAAA,MAAM,GAAG,GAAG,MAAM,KAAK,CAAC,GAAG,EAAE,EAAE,IAAI,EAAE,MAAM,EAAE,CAAC,CAAA;AAC9C,IAAA,IAAI,GAAG,CAAC,MAAM,IAAI,GAAG,EAAE;QACrB,MAAM,IAAI,KAAK,CAAC,CAAA,aAAA,EAAgB,GAAG,CAAC,UAAU,CAAE,CAAA,CAAC,CAAA;AAClD,KAAA;AACD,IAAA,OAAO,GAAG,CAAC,IAAI,EAAE,CAAA;AACnB,CAAC;SAEe,WAAW,GAAA;AACzB,IAAA,eAAe,OAAO,CAAC,GAAW,EAAE,MAAiB,EAAA;QACnD,IAAI,GAAG,GAAG,IAAI,CAAA;QACd,IAAI,IAAI,GAAG,kBAAkB,CAAC,MAAM,CAAC,EAAE,CAAC,GAAG,QAAQ,CAAA;QACnD,MAAM,EAAE,GAAG,MAAM,CAAC,EAAE,CAAC,KAAK,CAAC,GAAG,CAAC,CAAA;AAC/B,QAAA,IAAI,EAAE,CAAC,MAAM,GAAG,CAAC,EAAE;AACjB,YAAA,IAAI,GAAG,EAAE,CAAC,GAAG,CAAC,kBAAkB,CAAC,CAAC,IAAI,CAAC,GAAG,CAAC,GAAG,WAAW,CAAA;AAC1D,SAAA;AAED,QAAA,MAAM,GAAG,GAAG,CAAU,OAAA,EAAA,IAAI,EAAE,CAAA;QAE5B,MAAM,mBAAmB,GAAG,EAAE,CAAA;QAC9B,IAAI,WAAW,GAAuB,IAAI,CAAA;QAE1C,GAAG;YACD,IAAI;AACF,gBAAA,WAAW,GAAG,MAAM,GAAG,CAAC,GAAG,CAAC,CAAA;AAC7B,aAAA;AAAC,YAAA,OAAO,KAAK,EAAE;AACd,gBAAA,GAAG,GAAG,CAAA,kFAAA,EAAqF,KAAK,CAAA,CAAE,CAAA;gBAClG,MAAK;AACN,aAAA;;AAGD,YAAA,MAAM,eAAe,GAAG,WAAW,EAAE,EAAE,KAAK,GAAG,CAAA;YAC/C,IAAI,CAAC,eAAe,EAAE;gBACpB,GAAG,GAAG,8DAA8D,CAAA;;AAErE,aAAA;;AAEF,SAAA,QAAQ,KAAK,EAAC;AAEf,QAAA,MAAM,WAAW,GACf,OAAO,WAAW,GAAG,UAAU,CAAC,KAAK,WAAW,GAAG,yBAAyB,GAAG,sBAAsB,CAAA;AAEvG,QAAA,IAAI,GAAG,EAAE;YACP,OAAO;gBACL,WAAW;gBACX,mBAAmB;AACnB,gBAAA,qBAAqB,EAAE;AACrB,oBAAA,KAAK,EAAE,UAAU;AACjB,oBAAA,OAAO,EAAE,GAAG;AACb,iBAAA;aACF,CAAA;AACF,SAAA;AAAM,aAAA;YACL,OAAO;gBACL,WAAW;gBACX,mBAAmB;gBACnB,qBAAqB,EAAE,EAAE,WAAW,EAAE;aACvC,CAAA;AACF,SAAA;KACF;AAED,IAAA,OAAO,EAAE,GAAG,EAAE,OAAO,EAAE,CAAA;AACzB;;;;"}
+\ No newline at end of file
+diff --git a/node_modules/web-did-resolver/lib/resolver.module.js b/node_modules/web-did-resolver/lib/resolver.module.js
+index 353848c..736fe17 100644
+--- a/node_modules/web-did-resolver/lib/resolver.module.js
++++ b/node_modules/web-did-resolver/lib/resolver.module.js
+@@ -1,297 +1,61 @@
+ import fetch from 'cross-fetch';
+ 
+-function _catch(body, recover) {
+-  try {
+-    var result = body();
+-  } catch (e) {
+-    return recover(e);
+-  }
+-
+-  if (result && result.then) {
+-    return result.then(void 0, recover);
+-  }
+-
+-  return result;
+-}
+-
++const DOC_PATH = '/.well-known/did.json';
+ // eslint-disable-next-line @typescript-eslint/no-explicit-any
+-const get = function (url) {
+-  try {
+-    return Promise.resolve(fetch(url, {
+-      mode: 'cors'
+-    })).then(function (res) {
+-      if (res.status >= 400) {
++async function get(url) {
++    const res = await fetch(url, { mode: 'cors' });
++    if (res.status >= 400) {
+         throw new Error(`Bad response ${res.statusText}`);
+-      }
+-
+-      return res.json();
+-    });
+-  } catch (e) {
+-    return Promise.reject(e);
+-  }
+-};
+-
+-function _settle(pact, state, value) {
+-  if (!pact.s) {
+-    if (value instanceof _Pact) {
+-      if (value.s) {
+-        if (state & 1) {
+-          state = value.s;
+-        }
+-
+-        value = value.v;
+-      } else {
+-        value.o = _settle.bind(null, pact, state);
+-        return;
+-      }
+-    }
+-
+-    if (value && value.then) {
+-      value.then(_settle.bind(null, pact, state), _settle.bind(null, pact, 2));
+-      return;
+-    }
+-
+-    pact.s = state;
+-    pact.v = value;
+-    const observer = pact.o;
+-
+-    if (observer) {
+-      observer(pact);
+-    }
+-  }
+-}
+-
+-const DOC_PATH = '/.well-known/did.json';
+-
+-const _Pact = /*#__PURE__*/function () {
+-  function _Pact() {}
+-
+-  _Pact.prototype.then = function (onFulfilled, onRejected) {
+-    const result = new _Pact();
+-    const state = this.s;
+-
+-    if (state) {
+-      const callback = state & 1 ? onFulfilled : onRejected;
+-
+-      if (callback) {
+-        try {
+-          _settle(result, 1, callback(this.v));
+-        } catch (e) {
+-          _settle(result, 2, e);
+-        }
+-
+-        return result;
+-      } else {
+-        return this;
+-      }
+     }
+-
+-    this.o = function (_this) {
+-      try {
+-        const value = _this.v;
+-
+-        if (_this.s & 1) {
+-          _settle(result, 1, onFulfilled ? onFulfilled(value) : value);
+-        } else if (onRejected) {
+-          _settle(result, 1, onRejected(value));
+-        } else {
+-          _settle(result, 2, value);
+-        }
+-      } catch (e) {
+-        _settle(result, 2, e);
+-      }
+-    };
+-
+-    return result;
+-  };
+-
+-  return _Pact;
+-}();
+-
+-function _isSettledPact(thenable) {
+-  return thenable instanceof _Pact && thenable.s & 1;
++    return res.json();
+ }
+-
+-function _do(body, test) {
+-  var awaitBody;
+-
+-  do {
+-    var result = body();
+-
+-    if (result && result.then) {
+-      if (_isSettledPact(result)) {
+-        result = result.v;
+-      } else {
+-        awaitBody = true;
+-        break;
+-      }
+-    }
+-
+-    var shouldContinue = test();
+-
+-    if (_isSettledPact(shouldContinue)) {
+-      shouldContinue = shouldContinue.v;
+-    }
+-
+-    if (!shouldContinue) {
+-      return result;
+-    }
+-  } while (!shouldContinue.then);
+-
+-  const pact = new _Pact();
+-
+-  const reject = _settle.bind(null, pact, 2);
+-
+-  (awaitBody ? result.then(_resumeAfterBody) : shouldContinue.then(_resumeAfterTest)).then(void 0, reject);
+-  return pact;
+-
+-  function _resumeAfterBody(value) {
+-    result = value;
+-
+-    for (;;) {
+-      shouldContinue = test();
+-
+-      if (_isSettledPact(shouldContinue)) {
+-        shouldContinue = shouldContinue.v;
+-      }
+-
+-      if (!shouldContinue) {
+-        break;
+-      }
+-
+-      if (shouldContinue.then) {
+-        shouldContinue.then(_resumeAfterTest).then(void 0, reject);
+-        return;
+-      }
+-
+-      result = body();
+-
+-      if (result && result.then) {
+-        if (_isSettledPact(result)) {
+-          result = result.v;
+-        } else {
+-          result.then(_resumeAfterBody).then(void 0, reject);
+-          return;
+-        }
+-      }
+-    }
+-
+-    _settle(pact, 1, result);
+-  }
+-
+-  function _resumeAfterTest(shouldContinue) {
+-    if (shouldContinue) {
+-      do {
+-        result = body();
+-
+-        if (result && result.then) {
+-          if (_isSettledPact(result)) {
+-            result = result.v;
+-          } else {
+-            result.then(_resumeAfterBody).then(void 0, reject);
+-            return;
+-          }
+-        }
+-
+-        shouldContinue = test();
+-
+-        if (_isSettledPact(shouldContinue)) {
+-          shouldContinue = shouldContinue.v;
+-        }
+-
+-        if (!shouldContinue) {
+-          _settle(pact, 1, result);
+-
+-          return;
+-        }
+-      } while (!shouldContinue.then);
+-
+-      shouldContinue.then(_resumeAfterTest).then(void 0, reject);
+-    } else {
+-      _settle(pact, 1, result);
+-    }
+-  }
+-}
+-
+ function getResolver() {
+-  const resolve = function (did, parsed) {
+-    try {
+-      let _interrupt;
+-
+-      function _temp4() {
+-        var _didDocument;
+-
+-        const contentType = typeof ((_didDocument = didDocument) == null ? void 0 : _didDocument['@context']) !== 'undefined' ? 'application/did+ld+json' : 'application/did+json';
+-
+-        if (err) {
+-          return {
+-            didDocument,
+-            didDocumentMetadata,
+-            didResolutionMetadata: {
+-              error: 'notFound',
+-              message: err
++    async function resolve(did, parsed) {
++        let err = null;
++        let path = decodeURIComponent(parsed.id) + DOC_PATH;
++        const id = parsed.id.split(':');
++        if (id.length > 1) {
++            path = id.map(decodeURIComponent).join('/') + '/did.json';
++        }
++        const url = `http://${path}`;
++        const didDocumentMetadata = {};
++        let didDocument = null;
++        do {
++            try {
++                didDocument = await get(url);
+             }
+-          };
+-        } else {
+-          return {
+-            didDocument,
+-            didDocumentMetadata,
+-            didResolutionMetadata: {
+-              contentType
++            catch (error) {
++                err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`;
++                break;
+             }
+-          };
+-        }
+-      }
+-
+-      let err = null;
+-      let path = decodeURIComponent(parsed.id) + DOC_PATH;
+-      const id = parsed.id.split(':');
+-
+-      if (id.length > 1) {
+-        path = id.map(decodeURIComponent).join('/') + '/did.json';
+-      }
+-
+-      const url = `https://${path}`;
+-      const didDocumentMetadata = {};
+-      let didDocument = null;
+-
+-      const _temp3 = _do(function () {
+-        function _temp2() {
+-          if (!_interrupt) {
+-            var _didDocument2;
+-
+             // TODO: this excludes the use of query params
+-            const docIdMatchesDid = ((_didDocument2 = didDocument) == null ? void 0 : _didDocument2.id) === did;
+-
++            const docIdMatchesDid = didDocument?.id === did;
+             if (!docIdMatchesDid) {
+-              err = 'resolver_error: DID document id does not match requested did'; // break // uncomment this when adding more checks
++                err = 'resolver_error: DID document id does not match requested did';
++                // break // uncomment this when adding more checks
+             }
+-          }
+-        }
+-
+-        const _temp = _catch(function () {
+-          return Promise.resolve(get(url)).then(function (_get) {
+-            didDocument = _get;
+-          });
+-        }, function (error) {
+-          err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`;
+-          _interrupt = 1;
+-        });
+-
+-        return _temp && _temp.then ? _temp.then(_temp2) : _temp2(_temp); // eslint-disable-next-line no-constant-condition
+-      }, function () {
+-        return !_interrupt && false;
+-      });
+-
+-      return Promise.resolve(_temp3 && _temp3.then ? _temp3.then(_temp4) : _temp4(_temp3));
+-    } catch (e) {
+-      return Promise.reject(e);
+-    }
+-  };
+-
+-  return {
+-    web: resolve
+-  };
++            // eslint-disable-next-line no-constant-condition
++        } while (false);
++        const contentType = typeof didDocument?.['@context'] !== 'undefined' ? 'application/did+ld+json' : 'application/did+json';
++        if (err) {
++            return {
++                didDocument,
++                didDocumentMetadata,
++                didResolutionMetadata: {
++                    error: 'notFound',
++                    message: err,
++                },
++            };
++        }
++        else {
++            return {
++                didDocument,
++                didDocumentMetadata,
++                didResolutionMetadata: { contentType },
++            };
++        }
++    }
++    return { web: resolve };
+ }
+ 
+ export { getResolver };
+diff --git a/node_modules/web-did-resolver/lib/resolver.module.js.map b/node_modules/web-did-resolver/lib/resolver.module.js.map
+index 40fe58d..247dd5f 100644
+--- a/node_modules/web-did-resolver/lib/resolver.module.js.map
++++ b/node_modules/web-did-resolver/lib/resolver.module.js.map
+@@ -1 +1 @@
+-{"version":3,"file":"resolver.module.js","sources":["../src/resolver.ts"],"sourcesContent":["import fetch from 'cross-fetch'\nimport { DIDDocument, DIDResolutionResult, DIDResolver, ParsedDID } from 'did-resolver'\n\nconst DOC_PATH = '/.well-known/did.json'\n\n// eslint-disable-next-line @typescript-eslint/no-explicit-any\nasync function get(url: string): Promise<any> {\n  const res = await fetch(url, { mode: 'cors' })\n  if (res.status >= 400) {\n    throw new Error(`Bad response ${res.statusText}`)\n  }\n  return res.json()\n}\n\nexport function getResolver(): Record<string, DIDResolver> {\n  async function resolve(did: string, parsed: ParsedDID): Promise<DIDResolutionResult> {\n    let err = null\n    let path = decodeURIComponent(parsed.id) + DOC_PATH\n    const id = parsed.id.split(':')\n    if (id.length > 1) {\n      path = id.map(decodeURIComponent).join('/') + '/did.json'\n    }\n\n    const url = `https://${path}`\n\n    const didDocumentMetadata = {}\n    let didDocument: DIDDocument | null = null\n\n    do {\n      try {\n        didDocument = await get(url)\n      } catch (error) {\n        err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`\n        break\n      }\n\n      // TODO: this excludes the use of query params\n      const docIdMatchesDid = didDocument?.id === did\n      if (!docIdMatchesDid) {\n        err = 'resolver_error: DID document id does not match requested did'\n        // break // uncomment this when adding more checks\n      }\n      // eslint-disable-next-line no-constant-condition\n    } while (false)\n\n    const contentType =\n      typeof didDocument?.['@context'] !== 'undefined' ? 'application/did+ld+json' : 'application/did+json'\n\n    if (err) {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: {\n          error: 'notFound',\n          message: err,\n        },\n      }\n    } else {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: { contentType },\n      }\n    }\n  }\n\n  return { web: resolve }\n}\n"],"names":["get","url","fetch","mode","res","status","Error","statusText","json","_settle","pact","state","value","_Pact","s","v","o","bind","then","DOC_PATH","prototype","onFulfilled","onRejected","result","callback","e","_this","getResolver","resolve","did","parsed","contentType","didDocument","err","didDocumentMetadata","didResolutionMetadata","error","message","path","decodeURIComponent","id","split","length","map","join","docIdMatchesDid","web"],"mappings":"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"}
+\ No newline at end of file
++{"version":3,"file":"resolver.module.js","sources":["../src/resolver.ts"],"sourcesContent":["import fetch from 'cross-fetch'\nimport { DIDDocument, DIDResolutionResult, DIDResolver, ParsedDID } from 'did-resolver'\n\nconst DOC_PATH = '/.well-known/did.json'\n\n// eslint-disable-next-line @typescript-eslint/no-explicit-any\nasync function get(url: string): Promise<any> {\n  const res = await fetch(url, { mode: 'cors' })\n  if (res.status >= 400) {\n    throw new Error(`Bad response ${res.statusText}`)\n  }\n  return res.json()\n}\n\nexport function getResolver(): Record<string, DIDResolver> {\n  async function resolve(did: string, parsed: ParsedDID): Promise<DIDResolutionResult> {\n    let err = null\n    let path = decodeURIComponent(parsed.id) + DOC_PATH\n    const id = parsed.id.split(':')\n    if (id.length > 1) {\n      path = id.map(decodeURIComponent).join('/') + '/did.json'\n    }\n\n    const url = `http://${path}`\n\n    const didDocumentMetadata = {}\n    let didDocument: DIDDocument | null = null\n\n    do {\n      try {\n        didDocument = await get(url)\n      } catch (error) {\n        err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`\n        break\n      }\n\n      // TODO: this excludes the use of query params\n      const docIdMatchesDid = didDocument?.id === did\n      if (!docIdMatchesDid) {\n        err = 'resolver_error: DID document id does not match requested did'\n        // break // uncomment this when adding more checks\n      }\n      // eslint-disable-next-line no-constant-condition\n    } while (false)\n\n    const contentType =\n      typeof didDocument?.['@context'] !== 'undefined' ? 'application/did+ld+json' : 'application/did+json'\n\n    if (err) {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: {\n          error: 'notFound',\n          message: err,\n        },\n      }\n    } else {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: { contentType },\n      }\n    }\n  }\n\n  return { web: resolve }\n}\n"],"names":[],"mappings":";;AAGA,MAAM,QAAQ,GAAG,uBAAuB,CAAA;AAExC;AACA,eAAe,GAAG,CAAC,GAAW,EAAA;AAC5B,IAAA,MAAM,GAAG,GAAG,MAAM,KAAK,CAAC,GAAG,EAAE,EAAE,IAAI,EAAE,MAAM,EAAE,CAAC,CAAA;AAC9C,IAAA,IAAI,GAAG,CAAC,MAAM,IAAI,GAAG,EAAE;QACrB,MAAM,IAAI,KAAK,CAAC,CAAA,aAAA,EAAgB,GAAG,CAAC,UAAU,CAAE,CAAA,CAAC,CAAA;AAClD,KAAA;AACD,IAAA,OAAO,GAAG,CAAC,IAAI,EAAE,CAAA;AACnB,CAAC;SAEe,WAAW,GAAA;AACzB,IAAA,eAAe,OAAO,CAAC,GAAW,EAAE,MAAiB,EAAA;QACnD,IAAI,GAAG,GAAG,IAAI,CAAA;QACd,IAAI,IAAI,GAAG,kBAAkB,CAAC,MAAM,CAAC,EAAE,CAAC,GAAG,QAAQ,CAAA;QACnD,MAAM,EAAE,GAAG,MAAM,CAAC,EAAE,CAAC,KAAK,CAAC,GAAG,CAAC,CAAA;AAC/B,QAAA,IAAI,EAAE,CAAC,MAAM,GAAG,CAAC,EAAE;AACjB,YAAA,IAAI,GAAG,EAAE,CAAC,GAAG,CAAC,kBAAkB,CAAC,CAAC,IAAI,CAAC,GAAG,CAAC,GAAG,WAAW,CAAA;AAC1D,SAAA;AAED,QAAA,MAAM,GAAG,GAAG,CAAU,OAAA,EAAA,IAAI,EAAE,CAAA;QAE5B,MAAM,mBAAmB,GAAG,EAAE,CAAA;QAC9B,IAAI,WAAW,GAAuB,IAAI,CAAA;QAE1C,GAAG;YACD,IAAI;AACF,gBAAA,WAAW,GAAG,MAAM,GAAG,CAAC,GAAG,CAAC,CAAA;AAC7B,aAAA;AAAC,YAAA,OAAO,KAAK,EAAE;AACd,gBAAA,GAAG,GAAG,CAAA,kFAAA,EAAqF,KAAK,CAAA,CAAE,CAAA;gBAClG,MAAK;AACN,aAAA;;AAGD,YAAA,MAAM,eAAe,GAAG,WAAW,EAAE,EAAE,KAAK,GAAG,CAAA;YAC/C,IAAI,CAAC,eAAe,EAAE;gBACpB,GAAG,GAAG,8DAA8D,CAAA;;AAErE,aAAA;;AAEF,SAAA,QAAQ,KAAK,EAAC;AAEf,QAAA,MAAM,WAAW,GACf,OAAO,WAAW,GAAG,UAAU,CAAC,KAAK,WAAW,GAAG,yBAAyB,GAAG,sBAAsB,CAAA;AAEvG,QAAA,IAAI,GAAG,EAAE;YACP,OAAO;gBACL,WAAW;gBACX,mBAAmB;AACnB,gBAAA,qBAAqB,EAAE;AACrB,oBAAA,KAAK,EAAE,UAAU;AACjB,oBAAA,OAAO,EAAE,GAAG;AACb,iBAAA;aACF,CAAA;AACF,SAAA;AAAM,aAAA;YACL,OAAO;gBACL,WAAW;gBACX,mBAAmB;gBACnB,qBAAqB,EAAE,EAAE,WAAW,EAAE;aACvC,CAAA;AACF,SAAA;KACF;AAED,IAAA,OAAO,EAAE,GAAG,EAAE,OAAO,EAAE,CAAA;AACzB;;;;"}
+\ No newline at end of file
+diff --git a/node_modules/web-did-resolver/lib/resolver.umd.js b/node_modules/web-did-resolver/lib/resolver.umd.js
+index 5c65bc0..04c1cbb 100644
+--- a/node_modules/web-did-resolver/lib/resolver.umd.js
++++ b/node_modules/web-did-resolver/lib/resolver.umd.js
+@@ -7,298 +7,62 @@
+ 
+   var fetch__default = /*#__PURE__*/_interopDefaultLegacy(fetch);
+ 
+-  function _catch(body, recover) {
+-    try {
+-      var result = body();
+-    } catch (e) {
+-      return recover(e);
+-    }
+-
+-    if (result && result.then) {
+-      return result.then(void 0, recover);
+-    }
+-
+-    return result;
+-  }
+-
++  const DOC_PATH = '/.well-known/did.json';
+   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+-  const get = function (url) {
+-    try {
+-      return Promise.resolve(fetch__default["default"](url, {
+-        mode: 'cors'
+-      })).then(function (res) {
+-        if (res.status >= 400) {
++  async function get(url) {
++      const res = await fetch__default["default"](url, { mode: 'cors' });
++      if (res.status >= 400) {
+           throw new Error(`Bad response ${res.statusText}`);
+-        }
+-
+-        return res.json();
+-      });
+-    } catch (e) {
+-      return Promise.reject(e);
+-    }
+-  };
+-
+-  function _settle(pact, state, value) {
+-    if (!pact.s) {
+-      if (value instanceof _Pact) {
+-        if (value.s) {
+-          if (state & 1) {
+-            state = value.s;
+-          }
+-
+-          value = value.v;
+-        } else {
+-          value.o = _settle.bind(null, pact, state);
+-          return;
+-        }
+-      }
+-
+-      if (value && value.then) {
+-        value.then(_settle.bind(null, pact, state), _settle.bind(null, pact, 2));
+-        return;
+-      }
+-
+-      pact.s = state;
+-      pact.v = value;
+-      const observer = pact.o;
+-
+-      if (observer) {
+-        observer(pact);
+-      }
+-    }
+-  }
+-
+-  const DOC_PATH = '/.well-known/did.json';
+-
+-  const _Pact = /*#__PURE__*/function () {
+-    function _Pact() {}
+-
+-    _Pact.prototype.then = function (onFulfilled, onRejected) {
+-      const result = new _Pact();
+-      const state = this.s;
+-
+-      if (state) {
+-        const callback = state & 1 ? onFulfilled : onRejected;
+-
+-        if (callback) {
+-          try {
+-            _settle(result, 1, callback(this.v));
+-          } catch (e) {
+-            _settle(result, 2, e);
+-          }
+-
+-          return result;
+-        } else {
+-          return this;
+-        }
+       }
+-
+-      this.o = function (_this) {
+-        try {
+-          const value = _this.v;
+-
+-          if (_this.s & 1) {
+-            _settle(result, 1, onFulfilled ? onFulfilled(value) : value);
+-          } else if (onRejected) {
+-            _settle(result, 1, onRejected(value));
+-          } else {
+-            _settle(result, 2, value);
+-          }
+-        } catch (e) {
+-          _settle(result, 2, e);
+-        }
+-      };
+-
+-      return result;
+-    };
+-
+-    return _Pact;
+-  }();
+-
+-  function _isSettledPact(thenable) {
+-    return thenable instanceof _Pact && thenable.s & 1;
++      return res.json();
+   }
+-
+-  function _do(body, test) {
+-    var awaitBody;
+-
+-    do {
+-      var result = body();
+-
+-      if (result && result.then) {
+-        if (_isSettledPact(result)) {
+-          result = result.v;
+-        } else {
+-          awaitBody = true;
+-          break;
+-        }
+-      }
+-
+-      var shouldContinue = test();
+-
+-      if (_isSettledPact(shouldContinue)) {
+-        shouldContinue = shouldContinue.v;
+-      }
+-
+-      if (!shouldContinue) {
+-        return result;
+-      }
+-    } while (!shouldContinue.then);
+-
+-    const pact = new _Pact();
+-
+-    const reject = _settle.bind(null, pact, 2);
+-
+-    (awaitBody ? result.then(_resumeAfterBody) : shouldContinue.then(_resumeAfterTest)).then(void 0, reject);
+-    return pact;
+-
+-    function _resumeAfterBody(value) {
+-      result = value;
+-
+-      for (;;) {
+-        shouldContinue = test();
+-
+-        if (_isSettledPact(shouldContinue)) {
+-          shouldContinue = shouldContinue.v;
+-        }
+-
+-        if (!shouldContinue) {
+-          break;
+-        }
+-
+-        if (shouldContinue.then) {
+-          shouldContinue.then(_resumeAfterTest).then(void 0, reject);
+-          return;
+-        }
+-
+-        result = body();
+-
+-        if (result && result.then) {
+-          if (_isSettledPact(result)) {
+-            result = result.v;
+-          } else {
+-            result.then(_resumeAfterBody).then(void 0, reject);
+-            return;
+-          }
+-        }
+-      }
+-
+-      _settle(pact, 1, result);
+-    }
+-
+-    function _resumeAfterTest(shouldContinue) {
+-      if (shouldContinue) {
+-        do {
+-          result = body();
+-
+-          if (result && result.then) {
+-            if (_isSettledPact(result)) {
+-              result = result.v;
+-            } else {
+-              result.then(_resumeAfterBody).then(void 0, reject);
+-              return;
+-            }
+-          }
+-
+-          shouldContinue = test();
+-
+-          if (_isSettledPact(shouldContinue)) {
+-            shouldContinue = shouldContinue.v;
+-          }
+-
+-          if (!shouldContinue) {
+-            _settle(pact, 1, result);
+-
+-            return;
+-          }
+-        } while (!shouldContinue.then);
+-
+-        shouldContinue.then(_resumeAfterTest).then(void 0, reject);
+-      } else {
+-        _settle(pact, 1, result);
+-      }
+-    }
+-  }
+-
+   function getResolver() {
+-    const resolve = function (did, parsed) {
+-      try {
+-        let _interrupt;
+-
+-        function _temp4() {
+-          var _didDocument;
+-
+-          const contentType = typeof ((_didDocument = didDocument) == null ? void 0 : _didDocument['@context']) !== 'undefined' ? 'application/did+ld+json' : 'application/did+json';
+-
+-          if (err) {
+-            return {
+-              didDocument,
+-              didDocumentMetadata,
+-              didResolutionMetadata: {
+-                error: 'notFound',
+-                message: err
++      async function resolve(did, parsed) {
++          let err = null;
++          let path = decodeURIComponent(parsed.id) + DOC_PATH;
++          const id = parsed.id.split(':');
++          if (id.length > 1) {
++              path = id.map(decodeURIComponent).join('/') + '/did.json';
++          }
++          const url = `http://${path}`;
++          const didDocumentMetadata = {};
++          let didDocument = null;
++          do {
++              try {
++                  didDocument = await get(url);
+               }
+-            };
+-          } else {
+-            return {
+-              didDocument,
+-              didDocumentMetadata,
+-              didResolutionMetadata: {
+-                contentType
++              catch (error) {
++                  err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`;
++                  break;
+               }
+-            };
+-          }
+-        }
+-
+-        let err = null;
+-        let path = decodeURIComponent(parsed.id) + DOC_PATH;
+-        const id = parsed.id.split(':');
+-
+-        if (id.length > 1) {
+-          path = id.map(decodeURIComponent).join('/') + '/did.json';
+-        }
+-
+-        const url = `https://${path}`;
+-        const didDocumentMetadata = {};
+-        let didDocument = null;
+-
+-        const _temp3 = _do(function () {
+-          function _temp2() {
+-            if (!_interrupt) {
+-              var _didDocument2;
+-
+               // TODO: this excludes the use of query params
+-              const docIdMatchesDid = ((_didDocument2 = didDocument) == null ? void 0 : _didDocument2.id) === did;
+-
++              const docIdMatchesDid = didDocument?.id === did;
+               if (!docIdMatchesDid) {
+-                err = 'resolver_error: DID document id does not match requested did'; // break // uncomment this when adding more checks
++                  err = 'resolver_error: DID document id does not match requested did';
++                  // break // uncomment this when adding more checks
+               }
+-            }
++              // eslint-disable-next-line no-constant-condition
++          } while (false);
++          const contentType = typeof didDocument?.['@context'] !== 'undefined' ? 'application/did+ld+json' : 'application/did+json';
++          if (err) {
++              return {
++                  didDocument,
++                  didDocumentMetadata,
++                  didResolutionMetadata: {
++                      error: 'notFound',
++                      message: err,
++                  },
++              };
++          }
++          else {
++              return {
++                  didDocument,
++                  didDocumentMetadata,
++                  didResolutionMetadata: { contentType },
++              };
+           }
+-
+-          const _temp = _catch(function () {
+-            return Promise.resolve(get(url)).then(function (_get) {
+-              didDocument = _get;
+-            });
+-          }, function (error) {
+-            err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`;
+-            _interrupt = 1;
+-          });
+-
+-          return _temp && _temp.then ? _temp.then(_temp2) : _temp2(_temp); // eslint-disable-next-line no-constant-condition
+-        }, function () {
+-          return !_interrupt && false;
+-        });
+-
+-        return Promise.resolve(_temp3 && _temp3.then ? _temp3.then(_temp4) : _temp4(_temp3));
+-      } catch (e) {
+-        return Promise.reject(e);
+       }
+-    };
+-
+-    return {
+-      web: resolve
+-    };
++      return { web: resolve };
+   }
+ 
+   exports.getResolver = getResolver;
+diff --git a/node_modules/web-did-resolver/lib/resolver.umd.js.map b/node_modules/web-did-resolver/lib/resolver.umd.js.map
+index 8458274..8c6962c 100644
+--- a/node_modules/web-did-resolver/lib/resolver.umd.js.map
++++ b/node_modules/web-did-resolver/lib/resolver.umd.js.map
+@@ -1 +1 @@
+-{"version":3,"file":"resolver.umd.js","sources":["../src/resolver.ts"],"sourcesContent":["import fetch from 'cross-fetch'\nimport { DIDDocument, DIDResolutionResult, DIDResolver, ParsedDID } from 'did-resolver'\n\nconst DOC_PATH = '/.well-known/did.json'\n\n// eslint-disable-next-line @typescript-eslint/no-explicit-any\nasync function get(url: string): Promise<any> {\n  const res = await fetch(url, { mode: 'cors' })\n  if (res.status >= 400) {\n    throw new Error(`Bad response ${res.statusText}`)\n  }\n  return res.json()\n}\n\nexport function getResolver(): Record<string, DIDResolver> {\n  async function resolve(did: string, parsed: ParsedDID): Promise<DIDResolutionResult> {\n    let err = null\n    let path = decodeURIComponent(parsed.id) + DOC_PATH\n    const id = parsed.id.split(':')\n    if (id.length > 1) {\n      path = id.map(decodeURIComponent).join('/') + '/did.json'\n    }\n\n    const url = `https://${path}`\n\n    const didDocumentMetadata = {}\n    let didDocument: DIDDocument | null = null\n\n    do {\n      try {\n        didDocument = await get(url)\n      } catch (error) {\n        err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`\n        break\n      }\n\n      // TODO: this excludes the use of query params\n      const docIdMatchesDid = didDocument?.id === did\n      if (!docIdMatchesDid) {\n        err = 'resolver_error: DID document id does not match requested did'\n        // break // uncomment this when adding more checks\n      }\n      // eslint-disable-next-line no-constant-condition\n    } while (false)\n\n    const contentType =\n      typeof didDocument?.['@context'] !== 'undefined' ? 'application/did+ld+json' : 'application/did+json'\n\n    if (err) {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: {\n          error: 'notFound',\n          message: err,\n        },\n      }\n    } else {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: { contentType },\n      }\n    }\n  }\n\n  return { web: resolve }\n}\n"],"names":["get","url","fetch","mode","res","status","Error","statusText","json","_settle","pact","state","value","_Pact","s","v","o","bind","then","DOC_PATH","prototype","onFulfilled","onRejected","result","callback","e","_this","getResolver","resolve","did","parsed","contentType","didDocument","err","didDocumentMetadata","didResolutionMetadata","error","message","path","decodeURIComponent","id","split","length","map","join","docIdMatchesDid","web"],"mappings":"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"}
+\ No newline at end of file
++{"version":3,"file":"resolver.umd.js","sources":["../src/resolver.ts"],"sourcesContent":["import fetch from 'cross-fetch'\nimport { DIDDocument, DIDResolutionResult, DIDResolver, ParsedDID } from 'did-resolver'\n\nconst DOC_PATH = '/.well-known/did.json'\n\n// eslint-disable-next-line @typescript-eslint/no-explicit-any\nasync function get(url: string): Promise<any> {\n  const res = await fetch(url, { mode: 'cors' })\n  if (res.status >= 400) {\n    throw new Error(`Bad response ${res.statusText}`)\n  }\n  return res.json()\n}\n\nexport function getResolver(): Record<string, DIDResolver> {\n  async function resolve(did: string, parsed: ParsedDID): Promise<DIDResolutionResult> {\n    let err = null\n    let path = decodeURIComponent(parsed.id) + DOC_PATH\n    const id = parsed.id.split(':')\n    if (id.length > 1) {\n      path = id.map(decodeURIComponent).join('/') + '/did.json'\n    }\n\n    const url = `http://${path}`\n\n    const didDocumentMetadata = {}\n    let didDocument: DIDDocument | null = null\n\n    do {\n      try {\n        didDocument = await get(url)\n      } catch (error) {\n        err = `resolver_error: DID must resolve to a valid https URL containing a JSON document: ${error}`\n        break\n      }\n\n      // TODO: this excludes the use of query params\n      const docIdMatchesDid = didDocument?.id === did\n      if (!docIdMatchesDid) {\n        err = 'resolver_error: DID document id does not match requested did'\n        // break // uncomment this when adding more checks\n      }\n      // eslint-disable-next-line no-constant-condition\n    } while (false)\n\n    const contentType =\n      typeof didDocument?.['@context'] !== 'undefined' ? 'application/did+ld+json' : 'application/did+json'\n\n    if (err) {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: {\n          error: 'notFound',\n          message: err,\n        },\n      }\n    } else {\n      return {\n        didDocument,\n        didDocumentMetadata,\n        didResolutionMetadata: { contentType },\n      }\n    }\n  }\n\n  return { web: resolve }\n}\n"],"names":["fetch"],"mappings":";;;;;;;;;EAGA,MAAM,QAAQ,GAAG,uBAAuB,CAAA;EAExC;EACA,eAAe,GAAG,CAAC,GAAW,EAAA;EAC5B,IAAA,MAAM,GAAG,GAAG,MAAMA,yBAAK,CAAC,GAAG,EAAE,EAAE,IAAI,EAAE,MAAM,EAAE,CAAC,CAAA;EAC9C,IAAA,IAAI,GAAG,CAAC,MAAM,IAAI,GAAG,EAAE;UACrB,MAAM,IAAI,KAAK,CAAC,CAAA,aAAA,EAAgB,GAAG,CAAC,UAAU,CAAE,CAAA,CAAC,CAAA;EAClD,KAAA;EACD,IAAA,OAAO,GAAG,CAAC,IAAI,EAAE,CAAA;EACnB,CAAC;WAEe,WAAW,GAAA;EACzB,IAAA,eAAe,OAAO,CAAC,GAAW,EAAE,MAAiB,EAAA;UACnD,IAAI,GAAG,GAAG,IAAI,CAAA;UACd,IAAI,IAAI,GAAG,kBAAkB,CAAC,MAAM,CAAC,EAAE,CAAC,GAAG,QAAQ,CAAA;UACnD,MAAM,EAAE,GAAG,MAAM,CAAC,EAAE,CAAC,KAAK,CAAC,GAAG,CAAC,CAAA;EAC/B,QAAA,IAAI,EAAE,CAAC,MAAM,GAAG,CAAC,EAAE;EACjB,YAAA,IAAI,GAAG,EAAE,CAAC,GAAG,CAAC,kBAAkB,CAAC,CAAC,IAAI,CAAC,GAAG,CAAC,GAAG,WAAW,CAAA;EAC1D,SAAA;EAED,QAAA,MAAM,GAAG,GAAG,CAAU,OAAA,EAAA,IAAI,EAAE,CAAA;UAE5B,MAAM,mBAAmB,GAAG,EAAE,CAAA;UAC9B,IAAI,WAAW,GAAuB,IAAI,CAAA;UAE1C,GAAG;cACD,IAAI;EACF,gBAAA,WAAW,GAAG,MAAM,GAAG,CAAC,GAAG,CAAC,CAAA;EAC7B,aAAA;EAAC,YAAA,OAAO,KAAK,EAAE;EACd,gBAAA,GAAG,GAAG,CAAA,kFAAA,EAAqF,KAAK,CAAA,CAAE,CAAA;kBAClG,MAAK;EACN,aAAA;;EAGD,YAAA,MAAM,eAAe,GAAG,WAAW,EAAE,EAAE,KAAK,GAAG,CAAA;cAC/C,IAAI,CAAC,eAAe,EAAE;kBACpB,GAAG,GAAG,8DAA8D,CAAA;;EAErE,aAAA;;EAEF,SAAA,QAAQ,KAAK,EAAC;EAEf,QAAA,MAAM,WAAW,GACf,OAAO,WAAW,GAAG,UAAU,CAAC,KAAK,WAAW,GAAG,yBAAyB,GAAG,sBAAsB,CAAA;EAEvG,QAAA,IAAI,GAAG,EAAE;cACP,OAAO;kBACL,WAAW;kBACX,mBAAmB;EACnB,gBAAA,qBAAqB,EAAE;EACrB,oBAAA,KAAK,EAAE,UAAU;EACjB,oBAAA,OAAO,EAAE,GAAG;EACb,iBAAA;eACF,CAAA;EACF,SAAA;EAAM,aAAA;cACL,OAAO;kBACL,WAAW;kBACX,mBAAmB;kBACnB,qBAAqB,EAAE,EAAE,WAAW,EAAE;eACvC,CAAA;EACF,SAAA;OACF;EAED,IAAA,OAAO,EAAE,GAAG,EAAE,OAAO,EAAE,CAAA;EACzB;;;;;;;;"}
+\ No newline at end of file
+diff --git a/node_modules/web-did-resolver/src/resolver.ts b/node_modules/web-did-resolver/src/resolver.ts
+index 00bf8db..ce2216e 100644
+--- a/node_modules/web-did-resolver/src/resolver.ts
++++ b/node_modules/web-did-resolver/src/resolver.ts
+@@ -21,7 +21,7 @@ export function getResolver(): Record<string, DIDResolver> {
+       path = id.map(decodeURIComponent).join('/') + '/did.json'
+     }
+ 
+-    const url = `https://${path}`
++    const url = `http://${path}`
+ 
+     const didDocumentMetadata = {}
+     let didDocument: DIDDocument | null = null

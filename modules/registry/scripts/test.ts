@@ -1,5 +1,5 @@
 // scripts/test
-// Runs `tsc` to check types and `jest` for tests.
+// Runs `tsc` to check types and `ava` for tests.
 
 import { stdout, exit } from 'node:process'
 import 'zx/globals'

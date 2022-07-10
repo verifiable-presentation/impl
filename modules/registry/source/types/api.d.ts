@@ -4,7 +4,7 @@
 /**
  * The ID of ... anything, really.
  */
-export declare type Did = string
+export declare type WebDid = string
 
 /**
  * The context for a verifiable credential/presentation.
@@ -26,10 +26,10 @@ export declare type IsoDateTime = string
  * The proof of signature.
  */
 export declare type Proof = {
-	type: 'RsaSignature2018' | 'Ed25519Signature2018' | 'Ed25519Signature2020'
+	type: 'Ed25519Signature2020'
 	created: IsoDateTime
 	proofPurpose: 'authentication' | 'assertionMethod'
-	verificationMethod: Did
+	verificationMethod: WebDid
 	challenge?: string
 	domain?: string
 	jws: string
@@ -39,10 +39,10 @@ export declare type Proof = {
  * A verifiable credential.
  */
 export declare interface Credential {
-	id: Did
+	id: WebDid
 	'@context': Context
 	type: CredentialType
-	issuer: Did
+	issuer: WebDid
 	issuanceDate: IsoDateTime
 	credentialSubject: Record<string, unknown>
 	proof: Proof
@@ -55,8 +55,8 @@ export declare interface Credential {
  * A verifiable presentation.
  */
 export declare interface Presentation {
-	id: Did
-	holder: Did
+	id: WebDid
+	holder: WebDid
 	'@context': Context
 	type: PresentationType
 	verifiableCredential: Credential[]
@@ -74,6 +74,4 @@ export declare type PresentationDto = Presentation
 /**
  * The query for Presentations.
  */
-export declare type PresentationQuery = {
-	holder?: string
-}
+export declare type PresentationQuery = Pick<Presentation, 'holder'>

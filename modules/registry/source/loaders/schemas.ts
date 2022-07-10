@@ -26,7 +26,7 @@ export const schemas = pluginify(async (server: FastifyInstance) => {
 			PresentationQuery: {
 				type: 'object',
 				properties: {
-					holder: { $ref: 'schemas#/definitions/Did' },
+					holder: { $ref: 'schemas#/definitions/WebDid' },
 				},
 			},
 		},
@@ -37,13 +37,13 @@ export const schemas = pluginify(async (server: FastifyInstance) => {
 		type: 'object',
 		definitions: {
 			// eslint-disable-next-line @typescript-eslint/naming-convention
-			Did: {
+			WebDid: {
 				type: 'string',
 			},
 			// eslint-disable-next-line @typescript-eslint/naming-convention
 			Context: {
 				type: 'array',
-				items: { type: 'string' },
+				items: { oneOf: [{ type: 'object' }, { type: 'string' }] },
 			},
 			// eslint-disable-next-line @typescript-eslint/naming-convention
 			PresentationType: {
@@ -78,36 +78,32 @@ export const schemas = pluginify(async (server: FastifyInstance) => {
 				type: 'object',
 				properties: {
 					type: {
-						enum: [
-							'RsaSignature2018',
-							'Ed25519Signature2018',
-							'Ed25519Signature2020',
-						],
+						enum: ['Ed25519Signature2020'],
 					},
 					created: { $ref: 'schemas#/definitions/IsoDateTime' },
 					proofPurpose: { enum: ['authentication', 'assertionMethod'] },
-					verificationMethod: { $ref: 'schemas#/definitions/Did' },
+					proofValue: { type: 'string' },
+					verificationMethod: { $ref: 'schemas#/definitions/WebDid' },
 					challenge: { type: 'string' },
 					domain: { type: 'string' },
-					jws: { type: 'string' },
 				},
 				required: [
 					'type',
 					'created',
 					'proofPurpose',
+					'proofValue',
 					'verificationMethod',
-					'jws',
 				],
 			},
 			// eslint-disable-next-line @typescript-eslint/naming-convention
 			Credential: {
 				type: 'object',
 				properties: {
-					id: { $ref: 'schemas#/definitions/Did' },
+					id: { $ref: 'schemas#/definitions/WebDid' },
 					// eslint-disable-next-line @typescript-eslint/naming-convention
 					'@context': { $ref: 'schemas#/definitions/Context' },
 					type: { $ref: 'schemas#/definitions/CredentialType' },
-					issuer: { $ref: 'schemas#/definitions/Did' },
+					issuer: { $ref: 'schemas#/definitions/WebDid' },
 					issuanceDate: { $ref: 'schemas#/definitions/IsoDateTime' },
 					credentialSubject: { type: 'object' },
 					proof: { $ref: 'schemas#/definitions/Proof' },
@@ -127,8 +123,8 @@ export const schemas = pluginify(async (server: FastifyInstance) => {
 			Presentation: {
 				type: 'object',
 				properties: {
-					id: { $ref: 'schemas#/definitions/Did' },
-					holder: { $ref: 'schemas#/definitions/Did' },
+					id: { $ref: 'schemas#/definitions/WebDid' },
+					holder: { $ref: 'schemas#/definitions/WebDid' },
 					// eslint-disable-next-line @typescript-eslint/naming-convention
 					'@context': { $ref: 'schemas#/definitions/Context' },
 					type: { $ref: 'schemas#/definitions/PresentationType' },

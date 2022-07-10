@@ -29,5 +29,9 @@ export const routes = async (server: FastifyInstance) => {
 		handler: handlers.templates.get,
 	})
 
+	server.get('/templates/:templateId/did.json', {
+		handler: handlers.templates.did,
+	})
+
 	logger.silly('sucessfully registered routes')
 }

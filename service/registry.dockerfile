@@ -1,5 +1,5 @@
 # service/registry.dockerfile
-# Dockerfile to build and run an image for the template store.
+# Dockerfile to build and run an image for the registry.
 
 # Use the official Node 18 image.
 FROM node:18

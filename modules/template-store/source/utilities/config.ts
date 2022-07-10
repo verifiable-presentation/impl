@@ -23,6 +23,8 @@ export const config = {
 	/* c8 ignore end */
 	// The port to bind the server to.
 	port: Number.parseInt(env.PORT ?? '4242', 10),
+	// The domain storing the templates.
+	domain: env.ISSUER_DOMAIN!,
 
 	// The configuration for the database.
 	database: {

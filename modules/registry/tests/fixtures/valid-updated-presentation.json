@@ -1,41 +1,35 @@
 {
-	"@context": [
-		"https://www.w3.org/2018/credentials/v1",
-		"https://www.w3.org/2018/credentials/examples/v1"
-	],
-	"id": "did:example:mTvrhQMMf6KBEJFItejG0tpohz5U",
-	"holder": "did:example:tpohz5uFEJFIteq3jY7vaG4gROLb",
+	"@context": ["https://www.w3.org/2018/credentials/v1"],
+	"id": "did:web:issuer.app:presentations:mTvrhQMMf6KBEJFItejG0tpohz5U",
+	"holder": "did:web:issuer.app:entities:tpohz5uFEJFIteq3jY7vaG4gROLb",
 	"type": "VerifiablePresentation",
 	"verifiableCredential": [
 		{
 			"@context": [
 				"https://www.w3.org/2018/credentials/v1",
-				"https://www.w3.org/2018/credentials/examples/v1"
+				"https://w3id.org/security/suites/ed25519-2020/v1",
+				{ "name": "https://schema.org/name" }
 			],
+			"credentialSubject": { "name": "Sad" },
 			"id": "did:example:F4RGIuxcKIjygFThqsXW9GX6HocV",
+			"issuanceDate": "2010-01-01T19:23:24Z",
+			"issuer": "did:web:issuer.app:entities:oLrLuxcK8nNupXoNsXW9G",
 			"type": ["VerifiableCredential", "IdentityCredential"],
-			"issuer": "https://example.edu/issuers/565049",
-			"issuanceDate": "2010-01-01T19:27:24Z",
-			"credentialSubject": {
-				"id": "did:example:Fibyu0uFoIHW7Eq3jY7v0rQs5OLb",
-				"name": "Happier"
-			},
 			"proof": {
-				"type": "RsaSignature2018",
-				"created": "2017-06-18T21:19:10Z",
+				"type": "Ed25519Signature2020",
+				"created": "2022-07-09T13:29:11Z",
+				"verificationMethod": "did:web:issuer.app:keys:zF7T2UyK4dk0D1sJsHYuJ6gkmlhu",
 				"proofPurpose": "assertionMethod",
-				"verificationMethod": "https://example.edu/issuers/565049#key-1",
-				"jws": "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkphbmUgRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQcMErWtEf7DxCXJl8C9q0L7ttkm-Ex54UWHsOCMGbtUc"
+				"proofValue": "z5weBQmFAUeq8JVyfW5JuET89aBiK1HquiHCLv8yPAjYG91ohSLmetaddVdrhbWj71jKXg795Bapt5ba3dqwfTqzs"
 			}
 		}
 	],
 	"proof": {
-		"type": "RsaSignature2018",
-		"created": "2018-09-14T21:56:10Z",
+		"challenge": "kkJYgVOYMtwONOkVTqmagEN48sOj",
+		"created": "2022-07-09T13:29:11Z",
 		"proofPurpose": "authentication",
-		"verificationMethod": "did:example:yNsJn2b6YEaLlAMYQyOk24vb3fss#keys-1",
-		"challenge": "1f44d55f-f161-4938-a659-f8026467f126",
-		"domain": "4jt78h47fh47",
-		"jws": "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkphbmUgRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQcMErWtEf7DxCXJl8C9q0L7ttkm-Ex54UWHsOCMGbtUc"
+		"proofValue": "z5BLQRLQcnoy6d2ZeKmXaTSbt9nCawmAhoMPnbL2z1K54HZvkNHnAosbzzbqPHv8ijYPc1HPQveGek5HwJy4oi3cn",
+		"type": "Ed25519Signature2020",
+		"verificationMethod": "did:web:issuer.app:keys:zF7T2UyK4dk0D1sJsHYuJ6gkmlhu"
 	}
 }

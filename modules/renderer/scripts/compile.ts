@@ -1,5 +1,5 @@
 // scripts/compile
-// Runs `tsc` to check types and `jest` for compiles.
+// Compiles the server using `tsup`.
 
 import 'zx/globals'
 import { spinner } from 'zx/experimental'
