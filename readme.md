@@ -28,14 +28,14 @@ them from GHCR and then use `docker run` to start them:
 
 ```sh
 > docker pull ghcr.io/verifiable-presentation/registry:latest
-> docker run registry --port 9267:9267
+> docker run -p 9267:9267 registry
 
 > docker pull ghcr.io/verifiable-presentation/template-store:latest
-> docker run template-store --port 9277:9277
+> docker run -p 9277:9277 template-store
 
 > docker pull ghcr.io/verifiable-presentation/renderer:latest
-> docker run renderer --port 9287:9287
+> docker run -p 9287:9287 renderer
 
 > docker pull ghcr.io/verifiable-presentation/generator:latest
-> docker run generator --port 9297:9297
+> docker run -p 9297:9297 generator
 ```
