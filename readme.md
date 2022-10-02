@@ -20,3 +20,22 @@ mentioned above. The repository is structured as a monorepo:
   containers to GHCR.
 - The `service/` folder contains the files necessary to run the four building
   blocks together using Docker.
+
+## Usage
+
+The four modules are published as containers on GHCR. To use them, `docker pull`
+them from GHCR and then use `docker run` to start them:
+
+```sh
+> docker pull ghcr.io/verifiable-presentation/registry:latest
+> docker run registry --port 9267:9267
+
+> docker pull ghcr.io/verifiable-presentation/template-store:latest
+> docker run template-store --port 9277:9277
+
+> docker pull ghcr.io/verifiable-presentation/renderer:latest
+> docker run renderer --port 9287:9287
+
+> docker pull ghcr.io/verifiable-presentation/generator:latest
+> docker run generator --port 9297:9297
+```
