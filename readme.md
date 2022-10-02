@@ -39,3 +39,71 @@ them from GHCR and then use `docker run` to start them:
 > docker pull ghcr.io/verifiable-presentation/generator:latest
 > docker run -p 9297:9297 generator
 ```
+
+```sh
+# To create a template
+echo '{
+  "template": "Hello <strong><%= data.name %></strong>",
+    "renderer": "ejs",
+    "schema": {
+      "type": "object",
+      "properties": {
+      "name": { "type": "string" }
+    },
+    "required": ["name"],
+    "additionalProperties": false
+  }
+}' | http post :9277/templates
+
+# To retrieve a template
+http get :9277/templates/{id}
+
+# To create a new keypair to sign verifiable presentations
+echo '{
+  "name": "Hello Certificate Signing Key",
+  "type": "Ed25519VerificationKey2020"
+}' | http post :9297/keys
+
+# To create an application, used to sign and create presentations.
+echo '{
+	"name": "Happy Template Issuer",
+	"template": {
+		"id": "did:web:localhost%3A9277:templates:{template-id}"
+	},
+	"renderer": {
+		"api": "http://localhost:9287"
+	},
+	"registry": {
+		"api": "http://localhost:9267"
+	},
+	"keys": ["{key-id}"]
+}' | http post :9297/applications
+
+# To create and sign a verifiable presentation using the template and key
+# we created
+echo '{
+	"credentials": [
+		{
+			"@context": [
+				"https://www.w3.org/2018/credentials/v1",
+				"https://w3id.org/security/suites/ed25519-2020/v1",
+				{ "name": "https://schema.org/name" }
+			],
+			"credentialSubject": { "name": "Happy" },
+			"id": "did:example:F4RGIuxcKIjygFThqsXW9GX6HocV",
+			"issuanceDate": "2010-01-01T19:23:24Z",
+			"issuer": "did:web:localhost%3A9267:entities:oLrLuxcK8nNupXoNsXW9G",
+			"type": ["VerifiableCredential", "IdentityCredential"],
+			"proof": {
+				"type": "Ed25519Signature2020",
+				"created": "2022-07-09T13:29:11Z",
+				"verificationMethod": "did:web:localhost%3A9267:keys:zF7T2UyK4dk0D1sJsHYuJ6gkmlhu",
+				"proofPurpose": "assertionMethod",
+				"proofValue": "z5weBQmFAUeq8JVyfW5JuET89aBiK1HquiHCLv8yPAjYG91ohSLmetaddVdrhbWj71jKXg795Bapt5ba3dqwfTqzs"
+			}
+		}
+	],
+	"output": "svg",
+	"holder": "did:web:localhost%3A9267:entities:tpohz5uFEJFIteq3jY7vaG4gROLb"
+}' | http post :9297/applications/{id}/issue
+```
