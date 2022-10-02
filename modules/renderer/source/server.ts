@@ -12,7 +12,7 @@ const server = build({
 	disableRequestLogging: true,
 })
 // Bind the server to the specified port.
-await server.listen({ port: config.port })
+await server.listen({ port: config.port, host: '::' })
 
 // To infinity and beyond!
 logger.info('server ready to receive requests on port %s', config.port)
