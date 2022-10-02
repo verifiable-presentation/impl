@@ -23,6 +23,10 @@ mentioned above. The repository is structured as a monorepo:
 
 ## Usage
 
+> To follow the examples below, you will need to install
+> [Docker](https://docs.docker.com/engine/install/) and
+> [HTTPie](https://httpie.io/docs/cli/installation).
+
 The four modules are published as containers on GHCR. To use them, `docker pull`
 them from GHCR and then use `docker run` to start them:
 
