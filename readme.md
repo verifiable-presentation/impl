@@ -93,7 +93,7 @@ echo '{
 				"https://w3id.org/security/suites/ed25519-2020/v1",
 				{ "name": "https://schema.org/name" }
 			],
-			"credentialSubject": { "name": "Happy" },
+			"credentialSubject": { "name": "Ramesh" },
 			"id": "did:example:F4RGIuxcKIjygFThqsXW9GX6HocV",
 			"issuanceDate": "2010-01-01T19:23:24Z",
 			"issuer": "did:web:localhost%3A9267:entities:oLrLuxcK8nNupXoNsXW9G",
