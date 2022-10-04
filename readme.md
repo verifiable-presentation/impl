@@ -41,7 +41,7 @@ them from GHCR and then use `docker run` to start them:
 > docker run -p 9287:9287 ghcr.io/verifiable-presentation/renderer
 
 > docker pull ghcr.io/verifiable-presentation/generator:latest
-> docker run -p 9297:9297 ghcr.io/verifiable-presentation/generator
+> docker run -p 9297:9297 --network host ghcr.io/verifiable-presentation/generator
 ```
 
 ```sh
@@ -107,7 +107,7 @@ echo '{
 			}
 		}
 	],
-	"output": "svg",
+	"output": "htm",
 	"holder": "did:web:localhost%3A9267:entities:tpohz5uFEJFIteq3jY7vaG4gROLb"
 }' | http post :9297/applications/{id}/issue
 ```
