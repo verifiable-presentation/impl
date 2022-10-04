@@ -32,16 +32,16 @@ them from GHCR and then use `docker run` to start them:
 
 ```sh
 > docker pull ghcr.io/verifiable-presentation/registry:latest
-> docker run -p 9267:9267 registry
+> docker run -p 9267:9267 ghcr.io/verifiable-presentation/registry
 
 > docker pull ghcr.io/verifiable-presentation/template-store:latest
-> docker run -p 9277:9277 template-store
+> docker run -p 9277:9277 ghcr.io/verifiable-presentation/template-store
 
 > docker pull ghcr.io/verifiable-presentation/renderer:latest
-> docker run -p 9287:9287 renderer
+> docker run -p 9287:9287 ghcr.io/verifiable-presentation/renderer
 
 > docker pull ghcr.io/verifiable-presentation/generator:latest
-> docker run -p 9297:9297 generator
+> docker run -p 9297:9297 ghcr.io/verifiable-presentation/generator
 ```
 
 ```sh
