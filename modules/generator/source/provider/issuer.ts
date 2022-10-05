@@ -147,6 +147,9 @@ const issuePresentation = async (
 	).json()
 	if (renderError) throw new ServerError(renderError.code, renderError.message)
 
+	// Add on the rendered certificate to the presentation.
+	presentation.renderedPresentation = certificate
+
 	// Also store the created presentation in the registry.
 	const { error: registryError } = await fetch(registryEndpoint, {
 		method: 'post',
