@@ -110,4 +110,7 @@ echo '{
 	"output": "htm",
 	"holder": "did:web:localhost%3A9267:entities:tpohz5uFEJFIteq3jY7vaG4gROLb"
 }' | http post :9297/applications/{id}/issue
+
+# To retrieve a presentation
+http get :9277/presentations/{id}
 ```
