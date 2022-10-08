@@ -112,5 +112,5 @@ echo '{
 }' | http post :9297/applications/{id}/issue
 
 # To retrieve a presentation
-http get :9277/presentations/{id}
+http get :9267/presentations/{id}
 ```
